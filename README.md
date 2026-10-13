@@ -1,4 +1,4 @@
-# Pocket companion marketplace
+# AttentionAGI companion marketplace
 
 A responsive, buildless web prototype for a pocket AI device. Run `npm run dev` and open http://localhost:5173. Run `npm run check` to verify JavaScript syntax.
 
