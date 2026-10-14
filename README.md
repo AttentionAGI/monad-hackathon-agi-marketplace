@@ -12,4 +12,8 @@ Production integration should add authenticated user/device identities, an agent
 
 The supplied `attentionagi-device.glb` is displayed using Google model-viewer 4.4.0, vendored under `dist/assets/vendor/` with its license. Drag or use arrow keys to rotate, scroll/pinch to zoom, or use Front, Back, and 3D view shortcuts. Reference images remain available if WebGL or model loading fails.
 
-The workspace uses a slate grey, midnight blue, and black palette while agent artwork keeps individual colors. Meta Muse, Codex, Cursor, and Grok Bot are demo catalog options; provider services are not connected. Meta Muse is a requested concept, with provider details not yet defined.
+Meta Muse, Codex, Cursor, and Grok Bot are demo catalog options; provider services are not connected.
+
+## Typography and branding
+
+The interface uses the Apple system font stack (-apple-system / SF on Apple platforms) with system sans-serif fallbacks, without redistributing Apple font files. All surfaces, agent art, and the 3D device are displayed in grayscale. Logo provenance is recorded in `dist/assets/logos/SOURCES.md`.
