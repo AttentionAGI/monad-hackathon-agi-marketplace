@@ -3,7 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "python3 -m http.server 5173 --directory dist",
-    "check": "node --check dist/app.js && node --check dist/device-viewer.js"
+    "dev": "node scripts/server.mjs",
+    "start": "node scripts/server.mjs",
+    "check": "node --check dist/app.js && node --check dist/device-viewer.js && node --check scripts/server.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "description": "AttentionAGI companion marketplace for a pocket AI device \u2014 hackathon prototype",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
   }
 }

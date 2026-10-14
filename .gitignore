@@ -1,0 +1,24 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Dependencies and generated reports
+node_modules/
+coverage/
+playwright-report/
+test-results/
+*.log
+
+# Local archives
+*.zip
+*.tar.gz
