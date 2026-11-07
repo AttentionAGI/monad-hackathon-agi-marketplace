@@ -100,7 +100,7 @@ function artifacts() {
 // ---------- shell ----------
 function render() {
   const tabs = [['home', 'Home'], ['chat', 'Chat'], ['artifacts', 'Artifacts']];
-  document.getElementById('app').innerHTML = `<div class="sky" aria-hidden="true"><div class="horizon"></div></div>
+  document.getElementById('app').innerHTML = `<div class="sky" aria-hidden="true"></div>
   <header class="top"><nav role="tablist" aria-label="Sections" style="display:contents">${tabs.map(([id, l]) => `<button class="tab" role="tab" data-tab="${id}" aria-selected="${state.tab === id}">${l}</button>`).join('')}</nav>
     <button class="me" data-action="account" aria-label="Account and settings"><img src="assets/logo.png" alt=""></button></header>
   <main class="page">${state.tab === 'chat' ? chat() : state.tab === 'artifacts' ? artifacts() : home()}</main>
