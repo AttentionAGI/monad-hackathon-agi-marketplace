@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex">
+<title>Attention · Signing in</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; text-align: center; color: #f5f5f7;
+    font: 17px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    background: linear-gradient(115deg, #070a24 0%, #14216b 35%, #3d1f6b 62%, #802666 100%) }
+  a { display: inline-block; margin-top: 18px; padding: 12px 22px; border-radius: 999px; background: #fff; color: #0f1238; font-weight: 600; text-decoration: none }
+  p { color: rgba(235,235,245,.62); font-size: 14px; max-width: 30ch; margin: 10px auto 0 }
+</style></head>
+<body><main><h2>Back to Attention…</h2><p>Finishing sign-in in the app.</p><a id="go" href="#">Open Attention</a></main>
+<script>
+  // OAuth relay: the provider sends ?code&state here; hand them straight to the app's sign-in sheet (attention://).
+  // Nothing is stored or sent anywhere else, and the code can't be used without the key that stays on Attention's server.
+  var target = 'attention://oauth/callback' + location.search;
+  document.getElementById('go').href = target;
+  location.replace(target);
+</script></body></html>
