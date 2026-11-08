@@ -50,8 +50,8 @@ a { color: inherit; text-decoration: none }
   background: linear-gradient(to bottom, rgba(5,7,26,.85), rgba(5,7,26,0)); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px) }
 .tab { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 0; color: rgba(235,235,245,.55); font-size: 19px; font-weight: 500; transition: color .2s }
 .tab::after { content: ""; width: 22px; height: 3px; border-radius: 3px; background: transparent }
-.tab[aria-selected="true"] { color: var(--text); font-size: 23px; font-weight: 700 }
-.tab[aria-selected="true"]::after { background: #fff }
+.tab[aria-selected="true"], .tab[aria-current="page"] { color: var(--text); font-size: 23px; font-weight: 700 }
+.tab[aria-selected="true"]::after, .tab[aria-current="page"]::after { background: #fff }
 .tab:hover { color: var(--text) }
 .me { margin-left: auto; align-self: center; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; padding: 0;
   border: 2px solid #fff; box-shadow: 0 2px 14px rgba(140,153,255,.45) }
@@ -204,6 +204,32 @@ dialog .btn { margin-top: 16px }
   width: max-content; font-size: 14px; opacity: 0; pointer-events: none; transition: .25s; z-index: 12 }
 #toast.show { opacity: 1; transform: translate(-50%, 0) }
 footer { text-align: center; color: var(--faint); font-size: 12px; padding: 10px 0 30px }
+footer nav { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 18px; margin-bottom: 8px }
+footer nav a { color: var(--muted) }
+footer nav a:hover { color: var(--text); text-decoration: underline }
+
+/* ---------- legal + support pages (/privacy, /terms, /support) ---------- */
+.legal { max-width: 760px; margin: 0 auto; padding: 8px 20px 40px }
+.legal .doc { padding: clamp(20px, 4vw, 36px) }
+.legal .meta { color: var(--faint); font-size: 13px; margin: 0 0 18px }
+.legal h1 { font-size: clamp(30px, 5vw, 42px); line-height: 1.08; letter-spacing: -1px; margin: 4px 0 8px }
+.legal h2 { font-size: 20px; letter-spacing: -.3px; margin: 30px 0 8px }
+.legal h3 { font-size: 16px; margin: 20px 0 6px }
+.legal p, .legal li { font-size: 15px; line-height: 1.65; color: rgba(235,235,245,.82) }
+.legal ul { padding-left: 20px }
+.legal li { margin: 4px 0 }
+.legal strong { color: var(--text) }
+.legal a:not(.btn) { color: var(--logo-blue); text-decoration: underline; text-underline-offset: 2px }
+.legal .toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 4px }
+.legal .toc a { text-decoration: none !important; color: var(--text) !important; font-size: 13px; padding: 6px 12px; border-radius: 999px; background: var(--card); border: 1px solid var(--stroke) }
+.legal .callout { padding: 14px 16px; border-radius: 14px; background: var(--card); border: 1px solid var(--stroke); margin: 14px 0 }
+.legal .callout p { margin: 0 }
+.legal details { border-bottom: 1px solid var(--stroke); padding: 14px 0 }
+.legal summary { cursor: pointer; font-size: 16px; font-weight: 600; list-style-position: inside }
+.legal details p, .legal details ol, .legal details ul { margin: 10px 0 0 }
+.legal-top .home-link { font-size: 21px; font-weight: 700; letter-spacing: -.3px; color: var(--text) }
+.legal-top { align-items: center }
 
 @media (max-width: 600px) { .top { gap: 18px; padding-top: 14px } .tab { font-size: 16px } .tab[aria-selected="true"] { font-size: 20px } .page { padding: 4px 14px 50px } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important } }
+@media (max-width: 600px) { .legal { padding: 4px 14px 30px } .legal-top .home-link { font-size: 18px } .legal-top nav { gap: 14px !important } }

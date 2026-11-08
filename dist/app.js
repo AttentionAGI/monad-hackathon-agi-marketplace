@@ -104,7 +104,7 @@ function render() {
   <header class="top"><nav role="tablist" aria-label="Sections" style="display:contents">${tabs.map(([id, l]) => `<button class="tab" role="tab" data-tab="${id}" aria-selected="${state.tab === id}">${l}</button>`).join('')}</nav>
     <button class="me" data-action="account" aria-label="Account and settings"><img src="assets/logo.png" alt=""></button></header>
   <main class="page">${state.tab === 'chat' ? chat() : state.tab === 'artifacts' ? artifacts() : home()}</main>
-  <footer>A little technology. A more human day. · © 2026 AttentionAGI</footer>`;
+  <footer><nav aria-label="Legal"><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms of Use</a><a href="/support/">Support</a></nav>A little technology. A more human day. · © 2026 Attention AI, Inc.</footer>`;
   if (state.tab === 'home' && state.open.market) {
     document.getElementById('sort').value = state.sort; renderCards();
     document.getElementById('search').addEventListener('input', e => { state.search = e.target.value; renderCards() });
