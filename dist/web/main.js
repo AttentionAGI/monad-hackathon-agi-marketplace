@@ -1,6 +1,6 @@
 // Attention on the web: signed-out shell (Continue with Apple), AI consent, then Home · Chat · Artifacts + Account.
 import { request, session, onUnauthorized, setTransport, explain } from './api.js';
-import { signInWithApple, askConsent, preloadApple } from './auth.js';
+import { signInWithApple, askConsent, preloadApple, CONSENT_VERSION } from './auth.js';
 import { initChat, mountChat, resetChat } from './chat.js';
 import { renderHome, renderArtifacts, openAccount, initials } from './views.js';
 import { h, icon, legalLinks, toast } from './ui.js';
@@ -37,10 +37,10 @@ async function start() {
       h('button', { class: 'text-link', type: 'button', onclick: () => signOut() }, 'Sign out')));
     return;
   }
-  if (!me.ai_consent) {
+  if (!me.ai_consent || String(me.ai_consent.version) !== String(CONSENT_VERSION)) {
     root.replaceChildren();
     if (!await askConsent()) return signOut();
-    me.ai_consent = { version: '1' };
+    me.ai_consent = { version: String(CONSENT_VERSION) };
   }
   initChat(me, {
     navigate: target => navigate(target),
