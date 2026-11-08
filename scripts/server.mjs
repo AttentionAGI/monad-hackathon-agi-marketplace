@@ -5,7 +5,7 @@ import { resolve, sep, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const defaultRoot = fileURLToPath(new URL('../dist/', import.meta.url));
-const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.glb': 'model/gltf-binary', '.txt': 'text/plain; charset=utf-8', '.md': 'text/plain; charset=utf-8' };
+const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.json': 'application/json', '.webp': 'image/webp', '.glb': 'model/gltf-binary', '.txt': 'text/plain; charset=utf-8', '.md': 'text/plain; charset=utf-8' };
 
 export function createPreviewServer(root = defaultRoot) {
   root = resolve(root);
@@ -40,5 +40,5 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const host = process.env.HOST || '127.0.0.1';
   const server = createPreviewServer();
   server.on('error', error => { console.error(error.message); process.exitCode = 1; });
-  server.listen(port, host, () => console.log(`AttentionAGI is ready at http://${host}:${port}`));
+  server.listen(port, host, () => console.log(`Attention is ready at http://${host}:${port}`));
 }

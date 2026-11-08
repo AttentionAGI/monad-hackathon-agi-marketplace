@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { createPreviewServer } from '../scripts/server.mjs';
 
-test('preview serves the application and 3D assets without exposing repository files', async t => {
+test('preview serves the web app, the landing page at /about/, legal pages and assets without exposing repository files', async t => {
   const server = createPreviewServer();
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
@@ -11,13 +11,20 @@ test('preview serves the application and 3D assets without exposing repository f
   const origin = `http://127.0.0.1:${server.address().port}`;
   const index = await fetch(origin);
   assert.equal(index.status, 200);
-  const landing = await index.text();
+  const app = await index.text();
+  assert.match(app, /Content-Security-Policy/);
+  assert.match(app, /src="\/web\/main\.js"/);
+  const about = await fetch(`${origin}/about/`);
+  assert.equal(about.status, 200);
+  const landing = await about.text();
   assert.match(landing, /Attention/);
   assert.match(landing, /href="\/privacy\/"/);
-  const app = await fetch(`${origin}/app/`);
-  assert.equal(app.status, 200);
-  assert.match(await app.text(), /AttentionAGI/);
-  for (const [path, type] of [['app/app.js', 'text/javascript'], ['app/device-viewer.js', 'text/javascript'], ['style.css', 'text/css'], ['assets/attentionagi-device.glb', 'model/gltf-binary'], ['assets/logos/codex.svg', 'image/svg+xml']]) {
+  for (const page of ['privacy/', 'terms/', 'support/', 'oauth/callback/', 'auth/apple/', 'app/']) {
+    assert.equal((await fetch(`${origin}/${page}`)).status, 200, page);
+  }
+  assert.match(await (await fetch(`${origin}/oauth/callback/`)).text(), /attention:\/\/oauth\/callback/);
+  assert.match(await (await fetch(`${origin}/app/`)).text(), /url=\//);
+  for (const [path, type] of [['web/main.js', 'text/javascript'], ['web/chat.js', 'text/javascript'], ['web/app.css', 'text/css'], ['style.css', 'text/css'], ['assets/logo.png', 'image/png'], ['assets/attentionagi-device.glb', 'model/gltf-binary'], ['assets/logos/codex.svg', 'image/svg+xml']]) {
     const response = await fetch(`${origin}/${path}`, { method: 'HEAD' });
     assert.equal(response.status, 200, path);
     assert.ok(response.headers.get('content-type').startsWith(type), path);

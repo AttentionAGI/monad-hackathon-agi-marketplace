@@ -1,0 +1,120 @@
+// Sign in with Apple (JS SDK, popup), the AI data-use consent, and connector sign-in popups.
+import { request, session, ApiError } from './api.js';
+import { CONFIG, h, icon, modal } from './ui.js';
+
+const APPLE_SDK = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+let sdk;
+function loadAppleSDK() {
+  if (window.AppleID?.auth) return Promise.resolve();
+  sdk ||= new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = APPLE_SDK; s.async = true;
+    s.onload = () => (window.AppleID?.auth ? resolve() : reject(new Error('Sign in with Apple did not load')));
+    s.onerror = () => { sdk = null; reject(new Error("Couldn't load Sign in with Apple. Check your connection.")); };
+    document.head.append(s);
+  });
+  return sdk;
+}
+export const preloadApple = () => loadAppleSDK().catch(() => {});
+
+const rand = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+
+/** -> {token, user_id, name} or null when the user closed the Apple popup. */
+export async function signInWithApple() {
+  await loadAppleSDK();
+  const state = rand();
+  window.AppleID.auth.init({ clientId: CONFIG.appleClientId, scope: 'name email', redirectURI: CONFIG.appleRedirectURI, state, usePopup: true });
+  let r;
+  try { r = await window.AppleID.auth.signIn(); }
+  catch (e) {
+    if (e?.error === 'popup_closed_by_user' || e?.error === 'user_cancelled_authorize') return null;
+    throw new Error(e?.error === 'popup_blocked_by_browser' ? 'Your browser blocked the Apple sign-in window. Allow pop-ups for attentionai.dev and try again.' : "Couldn't sign in with Apple.");
+  }
+  const idToken = r?.authorization?.id_token;
+  if (!idToken) throw new Error("Couldn't sign in with Apple.");
+  if (r.authorization.state && r.authorization.state !== state) throw new Error('Sign-in response did not match. Try again.');
+  const n = r.user?.name;
+  const body = { identity_token: idToken };
+  if (n && (n.firstName || n.lastName)) body.full_name = { givenName: n.firstName || '', familyName: n.lastName || '' };
+  if (r.user?.email) body.email = r.user.email;
+  const res = await request('/auth/apple', { method: 'POST', auth: false, body });
+  if (!res?.token) throw new Error("Couldn't sign in.");
+  session.set(res.token);
+  return res;
+}
+
+export const CONSENT_VERSION = 1;
+
+/** Same content as the iOS AIConsentView. Resolves true after POST /account/consent, false for "Not now". */
+export async function askConsent() {
+  const section = (title, iconName, items) => h('section', { class: 'consent-section' },
+    h('h3', {}, icon(iconName), title),
+    h('ul', {}, items.map(t => h('li', { text: t }))));
+  for (;;) {
+    const v = await modal({
+      title: 'How Attention uses AI', className: 'consent', dismissable: false,
+      body: [
+        h('div', { class: 'consent-badge' }, icon('shield', 'icon big')),
+        h('p', { class: 'muted', text: 'To answer you and get things done, Attention sends some of your data to the services below. Please review it before you start.' }),
+        section('What is sent', 'doc', ['Your messages to Attention', 'Transcripts of your own voice from recordings you make', 'Content from connected apps (like email or calendar) when you ask about it']),
+        section('Who receives it', 'globe', ['Anthropic (Claude): to write Attention’s AI responses', 'ElevTalk: to transcribe recordings and tell speakers apart', 'Apple Push Notification service: to deliver your check-ins and alerts']),
+        section('Why', 'spark', ['Only to provide Attention’s features to you: answers, transcripts, check-ins and tasks you approve']),
+        section('What never happens', 'shield', ['Your data is not used for advertising', 'Your data is not sold']),
+        h('p', {}, h('a', { class: 'text-link', href: '/privacy/', target: '_blank', rel: 'noopener' }, 'Read the Privacy Policy ', icon('ext'))),
+        h('p', { class: 'small muted', text: 'You can delete your account and its data any time in Account → Delete account.' }),
+      ],
+      actions: [{ label: 'Agree and continue', value: 'agree' }, { label: 'Not now', value: 'later', kind: 'ghost' }],
+    });
+    if (v !== 'agree') return false;
+    try { await request('/account/consent', { method: 'POST', body: { version: CONSENT_VERSION } }); return true; }
+    catch (e) { if (e instanceof ApiError && e.status === 401) return false; await modal({ title: "Couldn't save that", body: h('p', { class: 'muted', text: e.message }), actions: [{ label: 'Try again', value: 1 }] }); }
+  }
+}
+
+// ---------- connector sign-in (OAuth) in a popup ----------
+// /oauth/callback/ (the relay) hands {type:"oauth", query} back by postMessage to the opener and, when a provider's
+// Cross-Origin-Opener-Policy cut the opener link, by BroadcastChannel. Then POST /oauth/finish {code, state, ...}.
+const PENDING_KEY = 'attention.oauth.pending';
+const ALLOWED_ORIGINS = new Set([location.origin, 'https://attentionai.dev', 'https://www.attentionai.dev']);
+let waiting = null;
+
+function deliver(d) {
+  if (!waiting || !d || d.type !== 'oauth' || typeof d.query !== 'string') return;
+  const w = waiting; waiting = null;
+  w.resolve(Object.fromEntries(new URLSearchParams(d.query)));
+}
+window.addEventListener('message', e => { if (ALLOWED_ORIGINS.has(e.origin)) deliver(e.data); });
+try { const bc = new BroadcastChannel('attention-oauth'); bc.onmessage = e => deliver(e.data); } catch { /* old browser: postMessage only */ }
+
+export function cancelOAuth() { if (waiting) { waiting.reject(new Error('canceled')); waiting = null; } }
+
+/** -> the /oauth/finish result {ok, name, account:{label}, added}. Call from a click handler (opens a popup). */
+export async function connectFlow(connectorId) {
+  const popup = window.open('about:blank', 'attention-oauth', 'popup=yes,width=520,height=720');
+  try { localStorage.setItem(PENDING_KEY, String(Date.now())); } catch { /* ignore */ }
+  try {
+    if (popup) popup.document.title = 'Connecting…';
+    const r = await request(`/connectors/${encodeURIComponent(connectorId)}/connect`, { method: 'POST', body: {} });
+    if (!r?.ok || !r.auth_url) throw new Error(r?.error || "Couldn't start sign-in.");
+    const url = new URL(r.auth_url);
+    if (url.protocol !== 'https:' && !(url.protocol === 'http:' && /^(localhost|127\.0\.0\.1)$/.test(url.hostname))) throw new Error('Unexpected sign-in address.');
+    if (popup && !popup.closed) popup.location.replace(url.href);
+    else if (!window.open(url.href, 'attention-oauth')) throw new Error('Your browser blocked the sign-in window. Allow pop-ups for attentionai.dev and try again.');
+    cancelOAuth();
+    const q = await new Promise((resolve, reject) => {
+      waiting = { resolve, reject };
+      setTimeout(() => { if (waiting?.resolve === resolve) { waiting = null; reject(new Error('Sign-in timed out. Try again.')); } }, 10 * 60 * 1000);
+    });
+    const body = {};
+    for (const k of ['code', 'state', 'error', 'error_description', 'scope']) if (q[k]) body[k] = q[k];
+    if (body.error && !body.code) throw new Error(body.error === 'access_denied' ? 'Sign-in was canceled.' : (body.error_description || body.error));
+    const fin = await request('/oauth/finish', { method: 'POST', body });
+    if (!fin?.ok) throw new Error(fin?.error || "Couldn't connect.");
+    return fin;
+  } catch (e) {
+    try { popup?.close(); } catch { /* cross-origin */ }
+    throw e;
+  } finally {
+    try { localStorage.removeItem(PENDING_KEY); } catch { /* ignore */ }
+  }
+}

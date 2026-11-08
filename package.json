@@ -5,10 +5,10 @@
   "scripts": {
     "dev": "node scripts/server.mjs",
     "start": "node scripts/server.mjs",
-    "check": "node --check dist/app/app.js && node --check dist/app/device-viewer.js && node --check scripts/server.mjs",
+    "check": "for f in dist/web/*.js scripts/server.mjs; do node --check \"$f\" || exit 1; done",
     "test": "node --test tests/*.test.mjs"
   },
-  "description": "AttentionAGI companion marketplace for a pocket AI device \u2014 hackathon prototype",
+  "description": "Attention on the web: chat with your agent, Home and Artifacts (static site for attentionai.dev)",
   "type": "module",
   "engines": {
     "node": ">=22"
