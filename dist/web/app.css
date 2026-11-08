@@ -382,3 +382,16 @@ dialog.sheet[open] { animation: slide-in .28s cubic-bezier(.2,.8,.2,1) }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important }
 }
+
+/* Continue with Google (GIS button, or the stand-in while it loads / off attentionai.dev) + Sign-in methods */
+.google-slot { width: 100%; min-height: 44px; display: flex; justify-content: center }
+.google-slot > .gsi-host { width: 100%; display: flex; justify-content: center }
+.btn.google { width: 100%; min-height: 50px; font-size: 16px; gap: 10px; background: #fff; color: #1f1f1f; border: 1px solid #747775; font-weight: 500 }
+.btn.google:hover { background: #f8f9ff }
+.btn.google .gmark, .method-mark .gmark { width: 18px; height: 18px }
+.method-row { display: flex; align-items: center; gap: 12px; min-height: 44px }
+.method-text { display: flex; flex-direction: column; min-width: 0; flex: 1 }
+.method-mark { width: 30px; height: 30px; border-radius: 8px; background: #fff; color: #000; display: grid; place-items: center; flex: none }
+.method-mark .icon { width: 17px; height: 17px }
+.link-btn { margin-top: 4px }
+.btn.apple.link-btn { min-height: 44px }

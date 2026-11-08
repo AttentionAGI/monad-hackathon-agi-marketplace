@@ -1,6 +1,6 @@
-// Attention on the web: signed-out shell (Continue with Apple), AI consent, then Home · Chat · Artifacts + Account.
+// Attention on the web: signed-out shell (Continue with Apple / Google), AI consent, then Home · Chat · Artifacts + Account.
 import { request, session, onUnauthorized, setTransport, explain } from './api.js';
-import { signInWithApple, askConsent, preloadApple, CONSENT_VERSION } from './auth.js';
+import { signInWithApple, signInWithGoogle, googleButton, mountGoogleButton, googleAvailable, askConsent, preloadApple, CONSENT_VERSION } from './auth.js';
 import { initChat, mountChat, resetChat } from './chat.js';
 import { renderHome, renderArtifacts, openAccount, initials } from './views.js';
 import { h, icon, legalLinks, toast } from './ui.js';
@@ -71,6 +71,20 @@ function renderSignedOut(message) {
     } catch (e) { err.textContent = e.message || "Couldn't sign in."; }
     btn.disabled = false; btn.removeAttribute('aria-busy');
   });
+  // Continue with Google: a stand-in until Google's own button (GIS) replaces it; same session + consent flow as Apple.
+  const gStandIn = googleButton();
+  const gSlot = h('div', { class: 'google-slot' }, gStandIn);
+  gStandIn.addEventListener('click', () => {
+    err.textContent = googleAvailable() ? 'Google sign-in is still loading. Try again in a moment.' : 'Continue with Google works on attentionai.dev.';
+  });
+  const onGoogle = async idToken => {
+    err.textContent = '';
+    btn.disabled = true; gSlot.setAttribute('aria-busy', 'true');
+    try { await signInWithGoogle(idToken); await start(); return; }
+    catch (e) { err.textContent = e.message || "Couldn't sign in with Google."; }
+    btn.disabled = false; gSlot.removeAttribute('aria-busy');
+  };
+  requestAnimationFrame(() => mountGoogleButton(gSlot, { onIdToken: onGoogle, onError: e => { err.textContent = e.message; } }));
   const input = h('textarea', { rows: '1', placeholder: 'Message Attention', 'aria-label': 'Message Attention (sign in to send)', maxlength: '8000' });
   const nudge = () => {
     const v = input.value.trim();
@@ -89,6 +103,7 @@ function renderSignedOut(message) {
         h('h1', { text: 'Attention' }),
         h('p', { class: 'so-lede', text: 'Your AI that remembers your day and gets things done — always with your approval.' }),
         btn,
+        gSlot,
         err,
         h('p', { class: 'fine' }, 'By continuing, you agree to our ', h('a', { href: '/terms/' }, 'Terms'), ' and acknowledge our ', h('a', { href: '/privacy/' }, 'Privacy Policy'), '.'))),
     h('div', { class: 'so-composer' },

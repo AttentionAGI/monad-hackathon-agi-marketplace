@@ -17,6 +17,7 @@ const NOTION = { type: 'connect', connector_id: 'notion', name: 'Notion', icon: 
 let task = null;
 const STEPS = ['Reading your request', 'Checking your calendar', 'Drafting a reply', 'Almost done'];
 let stepAt = 0;
+const RUNNING = new Map();               // non-blocking sends: task id -> {due, result}
 
 function taskObj(state, text, data) {
   task = { id: `task-${Math.random().toString(36).slice(2, 8)}`, contextId: 'ctx-demo' };
@@ -127,10 +128,26 @@ export function install({ setTransport, session, signedOut }) {
     if (path === '/browser/shot.jpg') return new Response(new Blob([]), { status: 404 });
     if (path === '/' && body.method === 'message/send') {
       stepAt = 0;
-      await sleep(2200);
       const msg = body.params.message;
       const text = msg.parts.map(p => p.text).join(' ').trim();
+      if (body.params.configuration?.blocking === false) {      // non-blocking: "working" now, tasks/get has the answer
+        const result = reply(text, msg), id = result.id || `mock-${Math.random().toString(36).slice(2, 10)}`;
+        result.id = id;
+        RUNNING.set(id, { due: Date.now() + 2200, result });
+        return json({ jsonrpc: '2.0', id: body.id, result: { id, contextId: result.contextId, kind: 'task', status: { state: 'working' }, metadata: {} } });
+      }
+      await sleep(2200);
       return json({ jsonrpc: '2.0', id: body.id, result: reply(text, msg) });
+    }
+    if (path === '/' && body.method === 'tasks/get') {
+      const r = RUNNING.get(body.params?.id);
+      if (!r) return json({ jsonrpc: '2.0', id: body.id, error: { code: -32001, message: 'Task not found' } });
+      if (Date.now() < r.due) {
+        stepAt = Math.min(stepAt + 1, STEPS.length * 2);
+        return json({ jsonrpc: '2.0', id: body.id, result: { id: body.params.id, kind: 'task', status: { state: 'working' },
+          metadata: { progress: { big: 'Working', small: STEPS[Math.floor(stepAt / 2) % STEPS.length], t: now() } } } });
+      }
+      return json({ jsonrpc: '2.0', id: body.id, result: r.result });
     }
     if (path === '/' && body.method === 'tasks/cancel') return json({ jsonrpc: '2.0', id: body.id, result: null });
     return json({ error: 'not found' }, 404);

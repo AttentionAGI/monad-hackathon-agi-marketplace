@@ -1,7 +1,7 @@
 // Home (Attention Score, Second You, recordings), Artifacts (tasks) and the Account sheet.
 import { request, explain } from './api.js';
-import { connectFlow } from './auth.js';
-import { CONFIG, h, icon, modal, confirmDialog, toast, iphoneOnly, timeAgo, duration, legalLinks } from './ui.js';
+import { connectFlow, linkIdentity, linkApple, googleButton, mountGoogleButton, googleAvailable } from './auth.js';
+import { CONFIG, h, icon, modal, confirmDialog, toast, iphoneOnly, timeAgo, duration, legalLinks, googleMark } from './ui.js';
 
 const loading = () => h('div', { class: 'skeleton', 'aria-hidden': 'true' }, h('span'), h('span'), h('span'));
 const errorLine = (e, retry) => h('p', { class: 'muted small' }, explain(e), ' ', retry ? h('button', { class: 'text-link', type: 'button', onclick: retry }, 'Retry') : null);
@@ -168,11 +168,12 @@ export function openAccount(me, { focus, signOut, deleted } = {}) {
   fill(planBox, () => request('/account/plan'), drawPlan);
   const drawConn = () => { connBox.querySelector('.panel-body')?.remove(); fill(connBox, () => request('/connectors'), d => drawConnectors(d, drawConn)); };
   drawConn();
+  const methodsBox = Array.isArray(me.identities) ? signInMethods(me) : null;      // (older servers: no identities)
   const body = [
     h('div', { class: 'profile' },
       h('span', { class: 'avatar big', 'aria-hidden': 'true' }, initials(me.name) || icon('user')),
       h('div', {}, h('p', { class: 'profile-name', text: me.name || 'Your account' }), me.email ? h('p', { class: 'muted small', text: me.email }) : null)),
-    planBox, connBox,
+    methodsBox, planBox, connBox,
     h('section', { class: 'sheet-section' },
       h('button', { class: 'btn ghost wide', type: 'button', onclick: async e => { e.currentTarget.closest('dialog')?.__done(null); signOut(); } }, 'Sign out'),
       h('button', { class: 'btn ghost danger-text wide', type: 'button', onclick: async e => {
@@ -186,6 +187,51 @@ export function openAccount(me, { focus, signOut, deleted } = {}) {
   const p = modal({ title: 'Account', body, className: 'sheet' });
   if (focus) setTimeout(() => document.getElementById(focus === 'connections' ? 'acct-conn' : 'acct-plan')?.scrollIntoView({ block: 'start' }), 50);
   return p;
+}
+
+// Sign-in methods: Apple / Google on this account, and "Link" for the missing one (POST /account/link). Linking never
+// merges two accounts: an Apple / Google account that already has its own Attention account is refused by the server.
+function signInMethods(me) {
+  const box = h('section', { class: 'sheet-section', id: 'acct-methods', 'aria-labelledby': 'acct-methods-h' });
+  const draw = () => {
+    const ids = me.identities || [];
+    const err = h('p', { class: 'small warn', role: 'alert' });
+    const done = list => { me.identities = list; draw(); toast('Sign-in method linked'); };
+    const fail = e => { err.textContent = e?.message || "Couldn't link that account."; };
+    const row = (provider, label, mark) => {
+      const id = ids.find(x => x.provider === provider);
+      const sub = id ? (id.email || 'Linked') : 'Not linked';
+      return h('div', { class: 'method-row' },
+        h('span', { class: 'method-mark', 'aria-hidden': 'true' }, mark),
+        h('div', { class: 'method-text' }, h('span', { class: 'row-title', text: label }), h('span', { class: 'row-sub', text: sub })),
+        id ? h('span', { class: 'chip' }, icon('check'), 'Linked') : null);
+    };
+    const kids = [h('h3', { id: 'acct-methods-h', text: 'Sign-in methods' }),
+      row('apple', 'Apple', icon('apple')), row('google', 'Google', googleMark())];
+    if (!ids.some(x => x.provider === 'apple')) {
+      const b = h('button', { class: 'btn apple link-btn', type: 'button' }, icon('apple'), h('span', { text: 'Link Apple' }));
+      b.addEventListener('click', async () => {
+        err.textContent = ''; b.disabled = true;
+        try { const list = await linkApple(); if (list) return done(list); } catch (e) { fail(e); }
+        b.disabled = false;
+      });
+      kids.push(b);
+    }
+    if (!ids.some(x => x.provider === 'google')) {
+      const stand = googleButton('Link Google');
+      stand.addEventListener('click', () => { err.textContent = googleAvailable() ? 'Google sign-in is still loading. Try again in a moment.' : 'Linking Google works on attentionai.dev.'; });
+      const slot = h('div', { class: 'google-slot link-btn' }, stand);
+      kids.push(h('p', { class: 'muted small', text: 'Link Google: choose the Google account to add.' }), slot);
+      setTimeout(() => mountGoogleButton(slot, {
+        onIdToken: async t => { err.textContent = ''; try { done(await linkIdentity('google', t)); } catch (e) { fail(e); } },
+        onError: fail,
+      }), 0);
+    }
+    kids.push(err, h('p', { class: 'muted small', text: 'Link both to reach this same account with either one.' }));
+    box.replaceChildren(...kids);
+  };
+  draw();
+  return box;
 }
 
 function drawPlan(p) {

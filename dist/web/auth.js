@@ -1,6 +1,7 @@
-// Sign in with Apple (JS SDK, popup), the AI data-use consent, and connector sign-in popups.
+// Sign in with Apple (JS SDK, popup), Continue with Google (Google Identity Services), linking the other provider,
+// the AI data-use consent, and connector sign-in popups.
 import { request, session, ApiError } from './api.js';
-import { CONFIG, h, icon, modal } from './ui.js';
+import { CONFIG, h, icon, modal, googleMark } from './ui.js';
 
 const APPLE_SDK = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
 let sdk;
@@ -19,8 +20,8 @@ export const preloadApple = () => loadAppleSDK().catch(() => {});
 
 const rand = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
 
-/** -> {token, user_id, name} or null when the user closed the Apple popup. */
-export async function signInWithApple() {
+/** -> Apple's popup result {authorization:{id_token}, user?} or null when the user closed it. */
+async function applePopup() {
   await loadAppleSDK();
   const state = rand();
   window.AppleID.auth.init({ clientId: CONFIG.appleClientId, scope: 'name email', redirectURI: CONFIG.appleRedirectURI, state, usePopup: true });
@@ -30,9 +31,16 @@ export async function signInWithApple() {
     if (e?.error === 'popup_closed_by_user' || e?.error === 'user_cancelled_authorize') return null;
     throw new Error(e?.error === 'popup_blocked_by_browser' ? 'Your browser blocked the Apple sign-in window. Allow pop-ups for attentionai.dev and try again.' : "Couldn't sign in with Apple.");
   }
-  const idToken = r?.authorization?.id_token;
-  if (!idToken) throw new Error("Couldn't sign in with Apple.");
+  if (!r?.authorization?.id_token) throw new Error("Couldn't sign in with Apple.");
   if (r.authorization.state && r.authorization.state !== state) throw new Error('Sign-in response did not match. Try again.');
+  return r;
+}
+
+/** -> {token, user_id, name} or null when the user closed the Apple popup. */
+export async function signInWithApple() {
+  const r = await applePopup();
+  if (!r) return null;
+  const idToken = r.authorization.id_token;
   const n = r.user?.name;
   const body = { identity_token: idToken };
   if (n && (n.firstName || n.lastName)) body.full_name = { givenName: n.firstName || '', familyName: n.lastName || '' };
@@ -41,6 +49,96 @@ export async function signInWithApple() {
   if (!res?.token) throw new Error("Couldn't sign in.");
   session.set(res.token);
   return res;
+}
+
+// ---------- Continue with Google (Google Identity Services: ID token by popup; openid email profile only) ----------
+const GIS_SDK = 'https://accounts.google.com/gsi/client';
+let gsdk;
+function loadGoogleSDK() {
+  if (window.google?.accounts?.id) return Promise.resolve();
+  gsdk ||= new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = GIS_SDK; s.async = true;
+    s.onload = () => (window.google?.accounts?.id ? resolve() : reject(new Error('Google sign-in did not load')));
+    s.onerror = () => { gsdk = null; reject(new Error("Couldn't load Google sign-in. Check your connection.")); };
+    document.head.append(s);
+  });
+  return gsdk;
+}
+
+/** Google's button only works on the origins registered for the web client. */
+export const googleAvailable = (origin = location.origin) => CONFIG.googleOrigins.includes(origin);
+
+let gisHandler = null, gisReady = false;
+function initGIS() {
+  if (gisReady) return;
+  window.google.accounts.id.initialize({
+    client_id: CONFIG.googleClientId, ux_mode: 'popup', auto_select: false, itp_support: true, context: 'signin',
+    callback: r => gisHandler?.(r),
+  });
+  gisReady = true;
+}
+
+/** Stand-in shown while Google's script loads, and where Google sign-in can't run (local previews). */
+export function googleButton(label = 'Continue with Google') {
+  return h('button', { class: 'btn google', type: 'button' }, googleMark(), h('span', { text: label }));
+}
+
+/**
+ * Puts Google's own "Continue with Google" button (rendered by GIS, per Google's branding) into `slot`, replacing the
+ * stand-in. onIdToken(idToken) runs with the ID token after the user picks an account. -> false when Google sign-in
+ * isn't available here (the stand-in stays). Only the most recently mounted button is live.
+ */
+export async function mountGoogleButton(slot, { onIdToken, onError = () => {} }) {
+  if (!googleAvailable()) return false;
+  try { await loadGoogleSDK(); } catch (e) { onError(e); return false; }
+  if (!slot.isConnected) return false;
+  initGIS();
+  gisHandler = r => {
+    if (r?.credential) onIdToken(r.credential);
+    else onError(new Error("Couldn't sign in with Google."));
+  };
+  const host = h('div', { class: 'gsi-host' });
+  const width = Math.round(Math.min(400, Math.max(200, slot.getBoundingClientRect().width || 320)));
+  slot.replaceChildren(host);
+  window.google.accounts.id.renderButton(host, { type: 'standard', theme: 'outline', size: 'large', text: 'continue_with', shape: 'pill', logo_alignment: 'center', width });
+  return true;
+}
+
+/** POST /auth/google {id_token} -> {token, user_id, name}; stores the session like Apple's. */
+export async function signInWithGoogle(idToken) {
+  const res = await request('/auth/google', { method: 'POST', auth: false, body: { id_token: idToken } });
+  if (!res?.token) throw new Error("Couldn't sign in.");
+  session.set(res.token);
+  return res;
+}
+
+const LINK_ERRORS = {
+  identity_in_use: p => `That ${p} account already has its own Attention account. Sign in with it there, or delete that account first.`,
+  provider_already_linked: p => `A different ${p} account is already linked to this account.`,
+  email_unverified: () => "That Google account's email isn't verified yet.",
+  token_expired: () => 'That took too long. Try again.',
+  invalid_token: p => `${p} sign-in couldn't be verified. Try again.`,
+};
+const PROVIDER_NAME = { apple: 'Apple', google: 'Google' };
+
+/** POST /account/link {provider, id_token} -> the account's identities [{provider, email}]. */
+export async function linkIdentity(provider, idToken) {
+  try {
+    const r = await request('/account/link', { method: 'POST', body: { provider, id_token: idToken } });
+    if (!r?.ok) throw new Error("Couldn't link that account.");
+    return r.identities || [];
+  } catch (e) {
+    const f = e instanceof ApiError && LINK_ERRORS[e.code];
+    if (f) throw new Error(f(PROVIDER_NAME[provider] || provider));
+    throw e;
+  }
+}
+
+/** Account → Sign-in methods → Link Apple: Apple's popup, then POST /account/link. null when the popup was closed. */
+export async function linkApple() {
+  const r = await applePopup();
+  return r ? linkIdentity('apple', r.authorization.id_token) : null;
 }
 
 export const CONSENT_VERSION = 2;

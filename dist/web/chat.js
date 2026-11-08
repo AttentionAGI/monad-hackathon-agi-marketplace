@@ -1,11 +1,13 @@
 // Chat: one thread at a time, kept in this browser (per account), sent to the agent as A2A message/send with
 // metadata.context (recent turns) and taskId/contextId while a task waits for an answer or an approval.
-import { request, rpc, explain } from './api.js';
+import { request, rpc, explain, sendTask, waitForTask, napper, transient, SETTLED } from './api.js';
 import { md, paragraphs } from './md.js';
 import { renderActions } from './cards.js';
 import { h, icon, uid, timeAgo, legalLinks, CONFIG } from './ui.js';
 
 const MAX_THREADS = 40, MAX_ITEMS = 200, MAX_CONTEXT = 60;
+const RESUME_MS = 24 * 3600 * 1000;           // a task the server ran while this tab was closed: picked up again for 24 h
+const nap = napper();                          // polling backoff; a tab coming back to the front wakes it
 const SUGGESTIONS = ["What's on my calendar tomorrow?", 'Summarize my unread email', 'Order pad thai for dinner', 'Find a table for two on Friday'];
 
 let me = null, hooks = {};
@@ -21,11 +23,27 @@ export function initChat(user, h0) {
   me = user; hooks = h0 || {};
   try { threads = JSON.parse(localStorage.getItem(key()) || '[]'); } catch { threads = []; }
   if (!Array.isArray(threads)) threads = [];
+  let resumable = null;
   for (const t of threads) for (const it of t.items || []) {
-    if (it.kind === 'running') { it.kind = 'failed'; it.text = 'Interrupted. Ask again.'; t.taskId = null; }
+    if (it.kind === 'running' || (it.kind === 'failed' && it.pollId)) {
+      // the server keeps running a task after the tab closes: poll it again (the newest one), else say so
+      if (it.pollId && Date.now() - (it.pollStarted || 0) < RESUME_MS) {
+        if (!resumable || (it.pollStarted || 0) > (resumable[1].pollStarted || 0)) resumable = [t, it];
+        if (it.kind === 'running') { it.kind = 'failed'; it.text = 'Interrupted. Ask again.'; }
+      } else if (it.kind === 'running') { it.kind = 'failed'; it.text = 'Interrupted. Ask again.'; t.taskId = null; delete it.pollId; }
+    }
     delete it.fresh;
   }
+  if (resumable) resume(...resumable);
 }
+
+if (typeof document !== 'undefined') document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  nap.wake();                                     // back in front: poll now, not after a backoff
+  if (busy) return;
+  const t = cur(), it = [...(t?.items || [])].reverse().find(i => i.pollId);
+  if (it && it.kind === 'failed' && Date.now() - (it.pollStarted || 0) < RESUME_MS) resume(t, it);
+});
 
 export function resetChat({ wipe = false } = {}) {
   stopProgress(); stopFrames(); gen++; busy = null;
@@ -175,7 +193,8 @@ function itemNode(t, it, isLastAgent) {
     case 'running':
       return row('agent', h('div', { class: 'bubble agent running' },
         h('span', { class: 'dots', 'aria-hidden': 'true' }, h('i'), h('i'), h('i')),
-        h('span', { class: 'live-text', id: 'live-text', text: it.text || 'Working on it…' })),
+        h('span', { class: 'live-text', id: 'live-text', text: it.text || 'Working on it…' }),
+        it.reconnecting ? h('span', { class: 'muted small reconnecting', id: 'live-reconnecting', text: ' · Reconnecting…' }) : null),
       frameNode());
     case 'confirm':
       return row('agent', h('article', { class: 'card approval' },
@@ -199,7 +218,8 @@ function itemNode(t, it, isLastAgent) {
         h('button', { class: 'pill', type: 'button', onclick: () => cancelTask(t, it) }, 'Cancel')) : null);
     case 'failed':
       return row('agent', h('div', { class: 'bubble agent error', role: 'alert' }, icon('alert'), h('span', { text: it.text }),
-        ['quota_exceeded', 'pro_required'].includes(it.code) ? h('a', { class: 'text-link', href: CONFIG.testflight, target: '_blank', rel: 'noopener noreferrer' }, 'Subscribe in the iOS app') : null));
+        ['quota_exceeded', 'pro_required'].includes(it.code) ? h('a', { class: 'text-link', href: CONFIG.testflight, target: '_blank', rel: 'noopener noreferrer' }, 'Subscribe in the iOS app') : null,
+        it.retry && !busy ? h('button', { class: 'pill', type: 'button', onclick: () => { const r = it.retry; delete it.retry; delete it.pollId; send(r); } }, 'Try again') : null));
     case 'canceled':
       return row('agent system', h('p', { class: 'system-line', text: it.text || 'Canceled' }));
     default:
@@ -231,10 +251,13 @@ export async function send(text, { silent = false, display } = {}) {
   const live = { id: uid(), role: 'agent', kind: 'running', text: '', fresh: 1 };
   t.items.push(live);
   t.updated = Date.now();
+  if (!t.taskId) t.prompt = text;                 // what "Try again" sends (a follow-up retries the original request)
+  const prompt = t.prompt || text;
   const my = ++gen;
   busy = { threadId: t.id, itemId: live.id, since: Date.now() / 1000 - 1 };
   save(); render(true);
   startProgress(); startFrames();
+  const stopped = () => my !== gen;
   try {
     const message = {
       role: 'user', kind: 'message', messageId: `w${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
@@ -242,24 +265,80 @@ export async function send(text, { silent = false, display } = {}) {
       metadata: { device: 'web', context: t.context.slice(-30).join('\n') },
     };
     if (t.taskId) { message.taskId = t.taskId; if (t.contextId) message.contextId = t.contextId; }
-    const task = await rpc('message/send', { message });
-    if (my !== gen) return;
-    applyTask(t, live, task);
-  } catch (e) {
-    if (my !== gen) return;
-    if (e.status === 401) return;
-    Object.assign(live, { kind: 'failed', text: explain(e), code: e.code || '' });
-    t.taskId = null; t.contextId = null;
-  } finally {
-    if (my === gen) {
-      busy = null;
-      stopProgress();
-      if (!frameWanted()) stopFrames();
-      t.updated = Date.now();
-      save(); render(true);
-      hooks.taskFinished?.();
+    const task = await sendTask(message, { shouldStop: stopped, onReconnecting: on => reconnecting(live, on), sleep: nap.sleep });
+    if (stopped()) return;
+    reconnecting(live, false);
+    let final = task;
+    if (task?.id && task?.status?.state && !SETTLED.has(task.status.state)) {
+      // the server is on it: keep its id on the card (a reload picks it up again), poll until it settles
+      Object.assign(live, { pollId: task.id, pollStarted: Date.now(), prompt }); save();
+      final = await poll(t, live, task.id, stopped);
+      if (!final) return;
     }
+    delete live.pollId;
+    applyTask(t, live, final);
+  } catch (e) {
+    failed(t, live, e, stopped, prompt);
+  } finally {
+    settle(t, my);
   }
+}
+
+/** Poll the task on this card -> the settled task, or null when stopped. */
+function poll(t, live, id, stopped) {
+  return waitForTask(id, {
+    shouldStop: stopped, sleep: nap.sleep,
+    onReconnecting: on => reconnecting(live, on),
+    onUpdate: task => {                                   // the step it's on (tasks/get carries it too)
+      const p = task?.metadata?.progress;
+      if (p?.small && live.text !== p.small) { live.text = p.small; const el = document.getElementById('live-text'); if (el) el.textContent = p.small; }
+    },
+  });
+}
+
+/** Pick up a task the server kept running (tab reloaded, or the connection came back after polling gave up). */
+async function resume(t, it) {
+  if (busy || !it.pollId) return;
+  const my = ++gen, stopped = () => my !== gen;
+  busy = { threadId: t.id, itemId: it.id, since: Date.now() / 1000 - 1 };
+  Object.assign(it, { kind: 'running', text: '' }); delete it.retry; delete it.code;
+  save(); render(); startProgress(); startFrames();
+  try {
+    const final = await poll(t, it, it.pollId, stopped);
+    if (!final) return;
+    delete it.pollId;
+    applyTask(t, it, final);
+  } catch (e) {
+    failed(t, it, e, stopped, it.prompt || t.prompt);
+  } finally {
+    settle(t, my);
+  }
+}
+
+function failed(t, live, e, stopped, prompt) {
+  if (stopped() || e?.name === 'AbortError') return;
+  if (e.status === 401) return;
+  delete live.reconnecting;
+  if (e.code !== 'unreachable') delete live.pollId;       // unreachable: it may still finish — kept for a later resume
+  const retry = transient(e) || ['task_not_found', 'unreachable', 'offline'].includes(e.code);
+  Object.assign(live, { kind: 'failed', text: explain(e), code: e.code || '', retry: retry && prompt ? prompt : undefined });
+  t.taskId = null; t.contextId = null;
+}
+
+function settle(t, my) {
+  if (my !== gen) return;
+  busy = null;
+  stopProgress();
+  if (!frameWanted()) stopFrames();
+  t.updated = Date.now();
+  save(); render(true);
+  hooks.taskFinished?.();
+}
+
+function reconnecting(it, on) {
+  if (!!it.reconnecting === on) return;
+  if (on) it.reconnecting = true; else delete it.reconnecting;
+  render();
 }
 
 function applyTask(t, live, task) {
@@ -277,7 +356,14 @@ function applyTask(t, live, task) {
     return;
   }
   t.taskId = null; t.contextId = null;
-  if (state === 'failed') { live.kind = 'failed'; live.text = data.small || data.big || text || "That didn't work."; return; }
+  delete live.reconnecting;
+  if (state === 'failed') {
+    live.kind = 'failed';
+    // "Interrupted by a server update — tap to try again": the whole sentence + a Try again button
+    live.text = data.interrupted ? (text || data.small) : (data.small || data.big || text || "That didn't work.");
+    if (data.retry) live.retry = data.retry_text || t.prompt || undefined;
+    return;
+  }
   if (state === 'canceled') { live.kind = 'canceled'; live.text = 'Canceled'; return; }
   const body = data.reply || text || data.small || data.big || 'Done.';
   const ps = paragraphs(body);
@@ -301,9 +387,12 @@ function stop() {
   if (!busy) return;
   const t = threads.find(x => x.id === busy.threadId);
   const it = t?.items.find(i => i.id === busy.itemId);
+  const running = it?.pollId;
   gen++; busy = null;
   stopProgress(); stopFrames();
   request('/abort').catch(() => {});
+  if (running) { rpc('tasks/cancel', { id: running }).catch(() => {}); delete it.pollId; }
+  if (it) delete it.reconnecting;
   if (it) { it.kind = 'canceled'; it.text = 'Stopped'; }
   if (t) { t.taskId = null; t.contextId = null; }
   save(); render();
