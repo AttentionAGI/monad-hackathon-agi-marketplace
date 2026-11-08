@@ -2,9 +2,9 @@
 
 The companion app is a static site. We kept the stack small: HTML, CSS, JavaScript, and a Node dev server. There's no bundler and no backend to start.
 
-`dist/index.html` loads the app. `app.js` handles the screens, catalog, dialogs, and preferences. Those preferences are saved in `localStorage` under `pocket-workspace`.
+`dist/index.html` is the public landing page. The web app lives at `/app/`: `dist/app/index.html` loads it, and `dist/app/app.js` handles the screens, catalog, dialogs, and preferences. Those preferences are saved in `localStorage` under `pocket-workspace`.
 
-`device-viewer.js` loads Google's model-viewer and our GLB. If the model can't load or the browser can't render it, we show a reference image instead. The viewer, model, and logos are bundled locally.
+`dist/app/device-viewer.js` loads Google's model-viewer and our GLB. If the model can't load or the browser can't render it, we show a reference image instead. The viewer, model, and logos are bundled locally.
 
 The server in `scripts/server.mjs` serves `dist/`. It's for local development; it doesn't handle accounts or API requests.
 

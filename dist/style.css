@@ -233,3 +233,65 @@ footer nav a:hover { color: var(--text); text-decoration: underline }
 @media (max-width: 600px) { .top { gap: 18px; padding-top: 14px } .tab { font-size: 16px } .tab[aria-selected="true"] { font-size: 20px } .page { padding: 4px 14px 50px } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important } }
 @media (max-width: 600px) { .legal { padding: 4px 14px 30px } .legal-top .home-link { font-size: 18px } .legal-top nav { gap: 14px !important } }
+
+/* ---------- public landing page (/) ---------- */
+.lp-top { align-items: center; gap: 20px; padding-left: max(16px, calc((100vw - 1080px) / 2)); padding-right: max(16px, calc((100vw - 1080px) / 2)) }
+.lp-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 700; letter-spacing: -.3px }
+.lp-brand img { width: 32px; height: 32px; border-radius: 50% }
+.lp-nav { display: flex; gap: 22px; margin-left: auto; font-size: 15px; color: var(--muted) }
+.lp-nav a:hover { color: var(--text) }
+.lp-top-cta { min-height: 36px; padding: 0 14px; font-size: 14px }
+.lp { max-width: 1080px; margin: 0 auto; padding: 0 16px 40px; display: flex; flex-direction: column; gap: 72px }
+.lp-hero { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px; align-items: center; padding-top: 36px }
+.lp-hero h1 { font-size: clamp(38px, 6.4vw, 68px); line-height: 1.02; letter-spacing: -2px; margin: 10px 0 18px }
+.lp-grad { background: var(--logo); -webkit-background-clip: text; background-clip: text; color: transparent }
+.lp-sub { font-size: clamp(16px, 1.6vw, 19px); line-height: 1.55; color: rgba(235,235,245,.8); margin: 0 0 26px; max-width: 54ch }
+.lp-ctas { display: flex; flex-wrap: wrap; gap: 12px; align-items: center }
+.lp-store { min-height: 54px; padding: 0 22px 0 18px; gap: 10px; border-radius: 16px }
+.lp-store .icon { width: 26px; height: 26px }
+.lp-store span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1; font-size: 18px; font-weight: 700 }
+.lp-store small { font-size: 11px; font-weight: 500; opacity: .75 }
+.lp-ctas .btn.ghost { min-height: 54px; border-radius: 16px }
+.lp-stage { height: clamp(300px, 42vw, 460px) }
+.lp-stage .model-fallback { width: 78%; height: 78% }
+.lp-features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; scroll-margin-top: 80px }
+.lp-card { padding: clamp(20px, 3vw, 30px) }
+.lp-wide { grid-column: 1 / -1 }
+.lp-num { font-size: 13px; font-weight: 700; letter-spacing: 1px; background: var(--logo); -webkit-background-clip: text; background-clip: text; color: transparent }
+.lp-card h2 { font-size: clamp(24px, 3vw, 30px); letter-spacing: -.6px; margin: 6px 0 10px }
+.lp-card p, .lp-mini span, .lp-levels span { color: rgba(235,235,245,.78); font-size: 15px; line-height: 1.6; margin: 0 }
+.lp-fine { margin-top: 12px !important; font-size: 13px !important; color: var(--faint) !important }
+.lp-list { margin: 14px 0 0; padding: 0; list-style: none; display: grid; gap: 8px }
+.lp-list li { position: relative; padding-left: 26px; font-size: 15px; line-height: 1.5; color: rgba(235,235,245,.86) }
+.lp-list li::before { content: "✓"; position: absolute; left: 0; top: 0; width: 18px; height: 18px; border-radius: 50%; background: var(--button); color: var(--on-button); font-size: 11px; font-weight: 700; display: grid; place-items: center; margin-top: 2px }
+.lp-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px }
+.lp-mini { padding: 16px; border-radius: 16px; background: var(--card); border: 1px solid var(--stroke) }
+.lp-mini b, .lp-levels b { display: block; font-size: 16px; margin-bottom: 6px }
+.lp-chips { margin-top: 16px }
+.lp-levels { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 8px }
+.lp-levels li { padding: 12px 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--stroke) }
+.lp-levels li.soon { border-style: dashed; opacity: .72 }
+.lp-section { scroll-margin-top: 80px }
+.lp-h2 { font-size: clamp(30px, 4.4vw, 44px); letter-spacing: -1.2px; margin: 0 0 8px }
+.lp-lede { color: var(--muted); font-size: 16px; margin: 0 0 22px }
+.lp-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px }
+.lp-plan { padding: 24px }
+.lp-plan h3 { margin: 0; font-size: 18px }
+.lp-price { font-size: 40px; font-weight: 700; letter-spacing: -1px; margin: 8px 0 0 }
+.lp-price small { font-size: 16px; font-weight: 500; color: var(--muted); letter-spacing: 0 }
+.lp-alt { margin: 2px 0 0; color: var(--muted); font-size: 14px }
+.lp-plan .muted { font-size: 14px; line-height: 1.55; margin: 14px 0 0 }
+.lp-featured { border-color: rgba(255,255,255,.5); background: var(--card-strong) }
+.lp-privacy { padding: clamp(22px, 4vw, 40px) }
+.lp-limited { margin: 20px 0; padding: 14px 16px; border-radius: 14px; background: var(--card); border: 1px solid var(--stroke); font-size: 14px; line-height: 1.6; color: rgba(235,235,245,.82) }
+.lp-limited a { color: var(--logo-blue); text-decoration: underline; text-underline-offset: 2px }
+.lp-footer { padding: 20px 16px 40px; font-size: 13px }
+.lp-footer nav { gap: 8px 22px }
+@media (max-width: 860px) {
+  .lp-hero { grid-template-columns: 1fr; padding-top: 16px }
+  .lp-stage { height: 260px }
+  .lp-features, .lp-plans, .lp-grid3 { grid-template-columns: 1fr }
+  .lp-nav { display: none }
+  .lp-top-cta { margin-left: auto }
+  .lp { gap: 52px }
+}

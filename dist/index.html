@@ -1,3 +1,157 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#070a24"><title>AttentionAGI — Your agents, within reach</title><link rel="stylesheet" href="style.css"></head>
-<body><div id="app"></div><div id="toast" role="status"></div><dialog id="modal"></dialog><script src="app.js"></script><script type="module" src="device-viewer.js"></script></body></html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#070a24">
+<title>Attention · Your day, remembered</title>
+<meta name="description" content="Attention is an iOS app that records your own voice through the day, turns it into notes and a Daily Attention Score, and gives you an AI agent that gets things done with your approval.">
+<meta property="og:title" content="Attention · Your day, remembered. Your agent, on it.">
+<meta property="og:description" content="Record your day, see your Daily Attention Score, and let your agent handle the busywork with your approval.">
+<meta property="og:image" content="https://attentionai.dev/assets/logo.png">
+<link rel="icon" href="/assets/logo.png">
+<link rel="stylesheet" href="/style.css"></head>
+<body class="landing">
+<div class="sky" aria-hidden="true"></div>
+
+<header class="top lp-top">
+  <a class="lp-brand" href="/"><img src="/assets/logo.png" alt="" width="32" height="32">Attention</a>
+  <nav class="lp-nav" aria-label="Main">
+    <a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#privacy">Privacy</a><a href="/support/">Support</a>
+  </nav>
+  <a class="btn lp-top-cta" href="https://testflight.apple.com/join/CAsCUPvT">Join the beta</a>
+</header>
+
+<main class="lp">
+
+<section class="lp-hero">
+  <div class="lp-hero-copy">
+    <p class="eyebrow">ATTENTION FOR IPHONE · NOW IN BETA</p>
+    <h1>Your day, remembered.<br><span class="lp-grad">Your agent, on it.</span></h1>
+    <p class="lp-sub">Attention listens for your voice through the day, turns what you said into notes, tasks and a Daily Attention Score, and gives you an AI agent that does the follow-up for you — always asking before anything is sent, booked or paid.</p>
+    <div class="lp-ctas">
+      <a class="btn lp-store" href="https://testflight.apple.com/join/CAsCUPvT">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.5 2-3.6 2.1-3.7-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.2.8 1.2 1.8 2.6 3.1 2.5 1.3 0 1.7-.8 3.3-.8 1.5 0 1.9.8 3.3.8 1.4 0 2.2-1.2 3-2.5.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.5-1-2.5-4.2zM14 5.2c.7-.8 1.2-2 1-3.2-1 0-2.2.7-3 1.5-.6.7-1.2 1.9-1 3.1 1.1.1 2.3-.6 3-1.4z"/></svg>
+        <span><small>Download on iPhone</small>Join the beta</span>
+      </a>
+      <a class="btn ghost" href="#features">See how it works</a>
+    </div>
+    <p class="note">Free to start. Beta via Apple TestFlight; App Store release coming soon.</p>
+  </div>
+  <div class="lp-hero-visual">
+    <div class="model-stage lp-stage" data-viewer-state="loading">
+      <img class="model-fallback" src="/assets/device-front.png" alt="The Attention card, a credit-card-sized voice recorder" width="664" height="684">
+      <span class="model-status" role="status">The optional Attention card</span>
+    </div>
+  </div>
+</section>
+
+<section id="features" class="lp-features" aria-label="What Attention does">
+
+  <article class="glass lp-card">
+    <span class="lp-num">01</span>
+    <h2>Record your day</h2>
+    <p>Capture conversations, ideas and plans with your iPhone’s microphone, or clip on the optional Attention card and leave your phone in your pocket. Attention recognizes your voice and keeps only what <em>you</em> said — other people’s voices are discarded after transcription.</p>
+    <ul class="lp-list"><li>iPhone mic or the Attention card</li><li>Only your own voice is kept</li><li>Searchable notes and summaries</li></ul>
+  </article>
+
+  <article class="glass lp-card">
+    <span class="lp-num">02</span>
+    <h2>Daily Attention Score</h2>
+    <p>One number for how much attention headroom you had today, measured against your own baseline — not against anyone else. See what drained you, what restored you, and how the week is trending.</p>
+    <p class="lp-fine">The score is a personal reflection tool. It is an estimate of your day’s load, not medical advice.</p>
+  </article>
+
+  <article class="glass lp-card lp-wide">
+    <span class="lp-num">03</span>
+    <h2>Your agent does the work</h2>
+    <p>Ask in chat, or just mention it in passing. Your agent drafts the email, finds the table, fills the form and keeps track of what’s next.</p>
+    <div class="lp-grid3">
+      <div class="lp-mini"><b>Chat</b><span>Ask anything about your day, your notes or your inbox, and get it done.</span></div>
+      <div class="lp-mini"><b>Cloud browser</b><span>Your agent works on real websites in a secure cloud browser and stops for your approval before anything is submitted, paid for or sent.</span></div>
+      <div class="lp-mini"><b>Open-in-app cards</b><span>For DoorDash, OpenTable, Google Maps, Venmo and more, the agent sets it up and hands you a card — you finish in that app.</span></div>
+    </div>
+  </article>
+
+  <article class="glass lp-card">
+    <span class="lp-num">04</span>
+    <h2>Connect everything</h2>
+    <p>Bring your agent the context it needs, on your terms. Connect as many Gmail and Google Calendar accounts as you like, the specific Google Drive files you choose, Notion and more. Disconnect any of them at any time.</p>
+    <div class="chips lp-chips"><span class="chip">Gmail</span><span class="chip">Google Calendar</span><span class="chip">Google Drive</span><span class="chip">Notion</span><span class="chip">Calendly</span><span class="chip">More soon</span></div>
+  </article>
+
+  <article class="glass lp-card">
+    <span class="lp-num">05</span>
+    <h2>Second You</h2>
+    <p>An assistant that grows into you, one level at a time — and only as far as you let it.</p>
+    <ol class="lp-levels">
+      <li><b>L1 · Style</b><span>Writes the way you do.</span></li>
+      <li><b>L2 · Memory</b><span>Remembers people, plans and preferences.</span></li>
+      <li><b>L3 · Assistant</b><span>Proposes the next step and prepares it.</span></li>
+      <li class="soon"><b>L4 · Delegate</b><span>Handles routine tasks on your behalf. Coming soon.</span></li>
+    </ol>
+  </article>
+
+</section>
+
+<section id="pricing" class="lp-section" aria-labelledby="pricing-h">
+  <h2 id="pricing-h" class="lp-h2">Pricing</h2>
+  <p class="lp-lede">Start free. Upgrade when your agent becomes indispensable.</p>
+  <div class="lp-plans">
+    <div class="glass lp-plan">
+      <h3>Free</h3><p class="lp-price">$0</p>
+      <p class="muted">Record your day with full transcripts, your Daily Attention Score, check-ins, and a monthly AI allowance for your agent.</p>
+    </div>
+    <div class="glass lp-plan lp-featured">
+      <h3>Pro</h3><p class="lp-price">$9.99<small>/mo</small></p><p class="lp-alt">or $83.99/yr</p>
+      <p class="muted">5× the AI allowance, live transcription while you record, and voice commands mid-conversation.</p>
+    </div>
+    <div class="glass lp-plan">
+      <h3>Max</h3><p class="lp-price">$49.99<small>/mo</small></p><p class="lp-alt">or $419.99/yr</p>
+      <p class="muted">Everything in Pro with 20× the AI allowance and the highest limits for cloud browser tasks and recordings.</p>
+    </div>
+  </div>
+  <p class="note">Subscriptions are purchased and managed through the App Store. Prices in USD.</p>
+</section>
+
+<section id="privacy" class="lp-section" aria-labelledby="privacy-h">
+  <div class="glass lp-privacy">
+    <h2 id="privacy-h" class="lp-h2">Privacy, in plain words</h2>
+    <ul class="lp-list">
+      <li>We keep only your own voice. Recordings that include other people are deleted after transcription.</li>
+      <li>We never sell your data and never use it for advertising.</li>
+      <li>Nothing is sent, submitted, booked or paid for on your behalf without your explicit approval.</li>
+      <li>Connected accounts are optional, use only the permissions you grant, and can be disconnected at any time.</li>
+      <li>You can delete your account and all of your data from inside the app.</li>
+    </ul>
+    <p class="lp-limited">Attention’s use and transfer of information received from Google APIs to any other app will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+    <p><a class="btn" href="/privacy/">Read the full Privacy Policy</a></p>
+  </div>
+</section>
+
+</main>
+
+<footer class="lp-footer">
+  <nav aria-label="Legal"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="/support/">Support</a><a href="mailto:wenxin@attentionai.dev">wenxin@attentionai.dev</a></nav>
+  © 2026 Attention AI, Inc.
+</footer>
+
+<script type="module">
+// Lazily upgrade the hero image to the interactive 3D card once it scrolls near view; the PNG stays if anything fails.
+const stage = document.querySelector('.lp-stage');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const upgrade = async () => {
+  try {
+    await import('/assets/vendor/model-viewer.min.js');
+    const v = document.createElement('model-viewer');
+    Object.entries({ src: '/assets/attentionagi-device.glb', alt: 'Interactive 3D model of the Attention card. Drag to rotate.',
+      'camera-controls': '', 'disable-pan': '', 'disable-zoom': '', 'touch-action': 'pan-y', 'camera-orbit': '-30deg 70deg auto', 'field-of-view': '30deg',
+      'environment-image': 'neutral', exposure: '1.15', 'shadow-intensity': '0.6', 'interaction-prompt': 'none', loading: 'lazy' })
+      .forEach(([k, val]) => v.setAttribute(k, val));
+    if (!reduce) { v.setAttribute('auto-rotate', ''); v.setAttribute('rotation-per-second', '18deg'); }
+    v.addEventListener('load', () => { stage.dataset.viewerState = 'ready'; });
+    stage.prepend(v);
+  } catch { /* keep the static image */ }
+};
+if ('IntersectionObserver' in window) {
+  const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); upgrade(); } }, { rootMargin: '200px' });
+  io.observe(stage);
+}
+</script>
+</body></html>

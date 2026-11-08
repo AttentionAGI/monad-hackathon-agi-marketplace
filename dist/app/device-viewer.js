@@ -22,7 +22,7 @@ function connectViewers() {
   });
 }
 try {
-  await import('./assets/vendor/model-viewer.min.js');
+  await import('/assets/vendor/model-viewer.min.js');
   connectViewers();
   new MutationObserver(connectViewers).observe(document.getElementById('app'), { childList: true, subtree: true });
 } catch {

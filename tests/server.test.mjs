@@ -11,8 +11,13 @@ test('preview serves the application and 3D assets without exposing repository f
   const origin = `http://127.0.0.1:${server.address().port}`;
   const index = await fetch(origin);
   assert.equal(index.status, 200);
-  assert.match(await index.text(), /AttentionAGI/);
-  for (const [path, type] of [['app.js', 'text/javascript'], ['style.css', 'text/css'], ['assets/attentionagi-device.glb', 'model/gltf-binary'], ['assets/logos/codex.svg', 'image/svg+xml']]) {
+  const landing = await index.text();
+  assert.match(landing, /Attention/);
+  assert.match(landing, /href="\/privacy\/"/);
+  const app = await fetch(`${origin}/app/`);
+  assert.equal(app.status, 200);
+  assert.match(await app.text(), /AttentionAGI/);
+  for (const [path, type] of [['app/app.js', 'text/javascript'], ['app/device-viewer.js', 'text/javascript'], ['style.css', 'text/css'], ['assets/attentionagi-device.glb', 'model/gltf-binary'], ['assets/logos/codex.svg', 'image/svg+xml']]) {
     const response = await fetch(`${origin}/${path}`, { method: 'HEAD' });
     assert.equal(response.status, 200, path);
     assert.ok(response.headers.get('content-type').startsWith(type), path);

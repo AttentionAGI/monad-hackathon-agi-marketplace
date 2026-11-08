@@ -51,9 +51,9 @@ An onchain agent marketplace is a possible next step: agent purchases or usage p
 It's plain HTML, CSS, and JavaScript. The app lives in `dist/`; edit the files there and refresh the browser. The name is a little misleading — it's the source we serve, not generated build output.
 
 ```text
-dist/app.js             App screens, agent catalog, and local state
-dist/style.css          Layout and styling
-dist/device-viewer.js   3D viewer and fallback images
+dist/index.html         Public landing page (/)
+dist/app/               Web app at /app/ (index.html, app.js screens and state, device-viewer.js 3D viewer)
+dist/style.css          Layout and styling (shared by every page)
 dist/assets/            Hardware model, logos, and bundled viewer
 scripts/server.mjs      Local dev server
 tests/                  Server tests
