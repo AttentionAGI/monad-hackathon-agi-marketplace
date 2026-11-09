@@ -141,7 +141,7 @@ export async function linkApple() {
   return r ? linkIdentity('apple', r.authorization.id_token) : null;
 }
 
-export const CONSENT_VERSION = 2;
+export const CONSENT_VERSION = 3;     // 3: Second You learns and runs on the iPhone; its style data never leaves it
 
 /** Same content as the iOS AIConsentView. Resolves true after POST /account/consent, false for "Not now". */
 export async function askConsent() {
@@ -153,10 +153,10 @@ export async function askConsent() {
       title: 'How Attention uses AI', className: 'consent', dismissable: false,
       body: [
         h('div', { class: 'consent-badge' }, icon('shield', 'icon big')),
-        h('p', { class: 'muted', text: 'To answer you and get things done, Attention sends some of your data to the services below. Please review it before you start.' }),
-        section('What is sent', 'doc', ['Your messages to Attention', 'Transcripts of your own voice from recordings you make', 'Content from connected apps (like email or calendar) when you ask about it']),
-        section('What Attention learns', 'doc', ['Attention learns your style from your messages and your own voice, so Second You can write and reply like you', 'Your messages are kept in your private profile for this. Turn it off any time in Second You → Training sources']),
-        section('Who receives it', 'globe', ['Anthropic (Claude): to write Attention’s AI responses', 'ElevTalk: to transcribe recordings and tell speakers apart', 'Apple Push Notification service: to deliver your check-ins and alerts']),
+        h('p', { class: 'muted', text: 'To answer you and get things done, Attention sends some of your data to the services below. Second You is different: it lives in the iPhone app and learns and runs on your iPhone. Please review this before you start.' }),
+        section('What is sent', 'doc', ['Your messages to Attention, so it can answer them', 'Recordings you make, so they can be transcribed', 'Content from connected apps (like email or calendar) when you ask about it']),
+        section('Second You stays on your iPhone', 'shield', ['Second You learns your style on your iPhone, from your own voice in recordings and from what you type to Attention in the iPhone app', 'It writes with Apple’s on-device model, not a cloud AI', 'Your style data (the lines it learns from, your style profile and examples) never leaves your iPhone and isn’t backed up to iCloud', 'Messages you send on the web are answered but not used to learn your style']),
+        section('Who receives it', 'globe', ['Anthropic (Claude): to write Attention’s AI responses (not Second You’s)', 'ElevTalk: to transcribe recordings and tell speakers apart', 'Apple Push Notification service: to deliver your check-ins and alerts']),
         section('Why', 'spark', ['Only to provide Attention’s features to you: answers, transcripts, check-ins and tasks you approve']),
         section('What never happens', 'shield', ['Your data is not used for advertising', 'Your data is not sold']),
         h('p', {}, h('a', { class: 'text-link', href: '/privacy/', target: '_blank', rel: 'noopener' }, 'Read the Privacy Policy ', icon('ext'))),

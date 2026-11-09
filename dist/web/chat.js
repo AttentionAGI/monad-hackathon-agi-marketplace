@@ -4,6 +4,7 @@ import { request, rpc, explain, sendTask, waitForTask, napper, transient, SETTLE
 import { md, paragraphs } from './md.js';
 import { renderActions } from './cards.js';
 import { h, icon, uid, timeAgo, legalLinks, CONFIG } from './ui.js';
+import { ACCEPT, ATTACH_ERRORS, MAX_FILES, buildParts, fit, prepare, shown, sizeLabel } from './attach.js';
 
 const MAX_THREADS = 40, MAX_ITEMS = 200, MAX_CONTEXT = 60;
 const RESUME_MS = 24 * 3600 * 1000;           // a task the server ran while this tab was closed: picked up again for 24 h
@@ -15,6 +16,7 @@ let threads = [], currentId = null;
 let busy = null, gen = 0;
 let els = null;
 let progTimer = null, frameTimer = null, frameOn = false, frameTick = 0, frameUrl = null;
+let pending = [], preparing = 0, attachNote = '';     // the composer's attachments (not yet sent)
 
 const key = () => `attention.threads.${me?.user_id || 'me'}`;
 const cur = () => threads.find(t => t.id === currentId) || null;
@@ -48,7 +50,7 @@ if (typeof document !== 'undefined') document.addEventListener('visibilitychange
 export function resetChat({ wipe = false } = {}) {
   stopProgress(); stopFrames(); gen++; busy = null;
   if (wipe) try { localStorage.removeItem(key()); } catch { /* ignore */ }
-  threads = []; currentId = null; els = null; me = null;
+  threads = []; currentId = null; els = null; me = null; pending = []; attachNote = '';
 }
 
 function save() {
@@ -73,6 +75,10 @@ export function mountChat(container, threadId) {
   const input = h('textarea', {
     id: 'composer-input', rows: '1', placeholder: 'Message Attention', 'aria-label': 'Message Attention', autocomplete: 'off', enterkeyhint: 'send', maxlength: '8000',
     oninput: () => { grow(); updateComposer(); },
+    onpaste: e => {                                      // a pasted screenshot / photo is attached
+      const files = [...(e.clipboardData?.files || [])];
+      if (files.length) { e.preventDefault(); addFiles(files); }
+    },
     onkeydown: e => {
       if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); submit(); }
     },
@@ -85,8 +91,17 @@ export function mountChat(container, threadId) {
     h('nav', { class: 'thread-list', 'aria-label': 'Recent chats' }),
     legalLinks('legal side-legal'));
   const msgs = h('div', { class: 'msgs', role: 'log', 'aria-live': 'polite', 'aria-relevant': 'additions', tabindex: '-1' }, h('div', { class: 'msgs-inner' }));
-  const form = h('form', { class: 'composer', onsubmit: e => { e.preventDefault(); submit(); } },
-    h('div', { class: 'composer-box' }, input, sendBtn));
+  const picker = h('input', { type: 'file', multiple: true, accept: ACCEPT, hidden: true, tabindex: '-1', 'aria-hidden': 'true',
+    onchange: e => { addFiles([...(e.target.files || [])]); e.target.value = ''; } });
+  const attachBtn = h('button', { class: 'attach-btn', type: 'button', 'aria-label': 'Attach photos or files', title: 'Attach photos or files',
+    onclick: () => picker.click() }, icon('clip'));
+  const tray = h('div', { class: 'attach-tray', 'aria-live': 'polite' });
+  const form = h('form', {
+    class: 'composer', onsubmit: e => { e.preventDefault(); submit(); },
+    ondragover: e => { if (e.dataTransfer?.types?.includes('Files')) { e.preventDefault(); form.classList.add('drop'); } },
+    ondragleave: () => form.classList.remove('drop'),
+    ondrop: e => { form.classList.remove('drop'); if (e.dataTransfer?.files?.length) { e.preventDefault(); addFiles([...e.dataTransfer.files]); } },
+  }, tray, h('div', { class: 'composer-box with-attach' }, attachBtn, picker, input, sendBtn));
   const main = h('div', { class: 'chat-main' },
     h('div', { class: 'chat-bar' },
       h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Show chats', 'aria-controls': 'threads', onclick: () => toggleDrawer(true) }, icon('menu')),
@@ -97,7 +112,8 @@ export function mountChat(container, threadId) {
   const view = h('section', { class: 'chat-view' }, side, main, scrim);
   view.addEventListener('keydown', e => { if (e.key === 'Escape' && side.classList.contains('open')) toggleDrawer(false); });
   container.replaceChildren(view);
-  els = { view, side, list: side.querySelector('.thread-list'), msgs, inner: msgs.firstChild, input, sendBtn, title: main.querySelector('.chat-bar-title') };
+  els = { view, side, list: side.querySelector('.thread-list'), msgs, inner: msgs.firstChild, input, sendBtn, tray, attachBtn, title: main.querySelector('.chat-bar-title') };
+  renderTray();
   render(true);
   if (busy) { startProgress(); startFrames(); } else if (frameWanted()) startFrames();
   if (matchMedia('(min-width: 821px)').matches) setTimeout(() => input.focus({ preventScroll: true }), 0);
@@ -131,15 +147,54 @@ function updateComposer() {
   b.replaceChildren(icon(busy ? 'stop' : 'send'));
   b.setAttribute('aria-label', busy ? 'Stop' : 'Send');
   b.classList.toggle('stop', !!busy);
-  b.disabled = !busy && !els.input.value.trim();
+  b.disabled = !busy && ((!els.input.value.trim() && !pending.length) || preparing > 0);
 }
 
 function submit() {
   if (busy) { stop(); return; }
   const text = els.input.value.trim();
-  if (!text) return;
-  els.input.value = ''; grow(); updateComposer();
-  send(text);
+  if ((!text && !pending.length) || preparing) return;
+  const atts = pending; pending = []; attachNote = '';
+  els.input.value = ''; grow(); renderTray(); updateComposer();
+  send(text, { attachments: atts });
+}
+
+// ---------- attachments (attach.js): picked, pasted or dropped; shown above the input with a remove x ----------
+async function addFiles(files) {
+  if (!files.length) return;
+  const { take, error } = fit(pending.length + preparing, files.length);
+  attachNote = error || '';
+  const todo = files.slice(0, take);
+  preparing += todo.length; renderTray(); updateComposer();
+  for (const f of todo) {
+    try { pending.push(await prepare(f)); } catch (e) { attachNote = e.message || "That file couldn't be attached."; }
+    preparing -= 1; renderTray(); updateComposer();
+  }
+}
+
+function removeAttachment(id) {
+  pending = pending.filter(a => a.id !== id); attachNote = '';
+  renderTray(); updateComposer(); els?.input.focus();
+}
+
+function attachmentNode(a, onRemove) {
+  const x = onRemove ? h('button', { class: 'att-x', type: 'button', 'aria-label': `Remove ${a.name}`, onclick: onRemove }, icon('close')) : null;
+  if (a.kind === 'image' && a.thumb) {
+    return h('div', { class: 'att thumb', title: a.name }, h('img', { src: a.thumb, alt: a.name }), x);
+  }
+  return h('div', { class: 'att file', title: a.name }, icon('doc'),
+    h('span', { class: 'att-meta' }, h('span', { class: 'att-name', text: a.name }),
+      h('span', { class: 'att-size', text: [a.kind === 'pdf' ? 'PDF' : a.kind === 'image' ? 'Image' : 'Text', a.size ? sizeLabel(a.size) : ''].filter(Boolean).join(' · ') })), x);
+}
+
+function renderTray() {
+  if (!els?.tray) return;
+  const kids = pending.map(a => attachmentNode(a, () => removeAttachment(a.id)));
+  for (let i = 0; i < preparing; i++) kids.push(h('div', { class: 'att thumb loading', 'aria-label': 'Preparing attachment' }, h('span', { class: 'dots' }, h('i'), h('i'), h('i'))));
+  els.tray.replaceChildren(...(kids.length ? [h('div', { class: 'att-row' }, kids)] : []),
+    attachNote ? h('p', { class: 'att-note', role: 'alert', text: attachNote }) : null);
+  els.tray.hidden = !kids.length && !attachNote;
+  els.attachBtn.disabled = pending.length + preparing >= MAX_FILES;
 }
 
 function render(stick) {
@@ -187,7 +242,9 @@ function cardCtx(t) {
 function itemNode(t, it, isLastAgent) {
   const enter = it.fresh != null ? { class: 'enter', style: `--d:${it.fresh * 320}ms` } : {};
   const row = (cls, ...kids) => h('div', { class: `row ${cls} ${enter.class || ''}`, style: enter.style || null }, ...kids);
-  if (it.role === 'user') return row('user', h('div', { class: 'bubble user', text: it.text }));
+  if (it.role === 'user') return row('user',
+    it.attachments?.length ? h('div', { class: 'att-row sent' }, it.attachments.map(a => attachmentNode(a))) : null,
+    it.text ? h('div', { class: 'bubble user', text: it.text }) : null);
   const pending = isLastAgent && !busy && t.taskId && !it.answer;
   switch (it.kind) {
     case 'running':
@@ -236,18 +293,18 @@ function frameNode() {
 // ---------- talking to the agent ----------
 const lastAgent = t => [...(t?.items || [])].reverse().find(i => i.role === 'agent');
 
-export async function send(text, { silent = false, display } = {}) {
+export async function send(text, { silent = false, display, attachments = [] } = {}) {
   text = String(text || '').trim();
-  if (!text || busy) return;
+  if ((!text && !attachments.length) || busy) return;
   const t = cur() || newThread();
   const waiting = lastAgent(t);
   if (t.taskId && waiting && ['confirm', 'question'].includes(waiting.kind) && !waiting.answer) {
     waiting.answer = text === 'yes' ? 'Approved' : text === 'no' ? 'Canceled' : 'Answered';
   }
-  if (!silent) t.items.push({ id: uid(), role: 'user', kind: 'text', text: display || text, fresh: 0 });
-  if (!t.title) t.title = text.slice(0, 80);
+  if (!silent) t.items.push({ id: uid(), role: 'user', kind: 'text', text: display || text, fresh: 0, ...(attachments.length ? { attachments: shown(attachments) } : {}) });
+  if (!t.title) t.title = (text || attachments.map(a => a.name).join(', ')).slice(0, 80);
   t.context = t.context || [];
-  t.context.push(`user: ${text}`);
+  t.context.push(`user: ${text}${attachments.length ? ` [attached: ${attachments.map(a => a.name).join(', ')}]` : ''}`);
   const live = { id: uid(), role: 'agent', kind: 'running', text: '', fresh: 1 };
   t.items.push(live);
   t.updated = Date.now();
@@ -261,7 +318,7 @@ export async function send(text, { silent = false, display } = {}) {
   try {
     const message = {
       role: 'user', kind: 'message', messageId: `w${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-      parts: [{ kind: 'text', text }],
+      parts: buildParts(text, attachments),
       metadata: { device: 'web', context: t.context.slice(-30).join('\n') },
     };
     if (t.taskId) { message.taskId = t.taskId; if (t.contextId) message.contextId = t.contextId; }
@@ -278,6 +335,7 @@ export async function send(text, { silent = false, display } = {}) {
     delete live.pollId;
     applyTask(t, live, final);
   } catch (e) {
+    if (ATTACH_ERRORS.has(e?.code) && attachments.length && !pending.length) { pending = attachments; renderTray(); }   // fix and resend
     failed(t, live, e, stopped, prompt);
   } finally {
     settle(t, my);

@@ -235,6 +235,32 @@ img.app-badge { object-fit: cover; background: none }
 .send:disabled { opacity: .3 }
 .send .icon { width: 19px; height: 19px; stroke-width: 2.4 }
 .send.stop .icon { width: 14px; height: 14px }
+.composer-box.with-attach { padding-left: 6px }
+.attach-btn { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); transition: background .2s, color .2s }
+.attach-btn:hover:not(:disabled) { background: var(--card); color: var(--text) }
+.attach-btn:disabled { opacity: .3 }
+.attach-btn .icon { width: 20px; height: 20px }
+.composer.drop .composer-box { border-color: var(--logo-blue); background: rgba(140,163,250,.14) }
+/* attachments: pending (above the input) and sent (above the user's bubble) */
+.attach-tray { padding: 0 4px 8px }
+.att-row { display: flex; flex-wrap: wrap; gap: 8px }
+.att-row.sent { justify-content: flex-end; max-width: min(600px, 86%) }
+.att { position: relative; flex: none; border-radius: 14px; background: var(--card); border: 1px solid var(--stroke);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px) }
+.att.thumb { width: 64px; height: 64px; overflow: hidden; display: grid; place-items: center }
+.att.thumb img { width: 100%; height: 100%; object-fit: cover; display: block }
+.att-row.sent .att.thumb { width: 96px; height: 96px; border-radius: 16px }
+.att.file { display: flex; align-items: center; gap: 8px; max-width: 240px; height: 52px; padding: 0 30px 0 12px }
+.att-row.sent .att.file { padding-right: 12px }
+.att.file > .icon { width: 20px; height: 20px; flex: none; color: var(--logo-blue) }
+.att-meta { display: flex; flex-direction: column; min-width: 0 }
+.att-name { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.att-size { font-size: 12px; color: var(--faint) }
+.att-x { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(7,10,36,.78); color: #fff; border: 1px solid var(--stroke) }
+.att-x .icon { width: 12px; height: 12px; stroke-width: 2.6 }
+.att.loading .dots { transform: scale(.8) }
+.att-note { margin: 6px 4px 0; font-size: 13px; color: var(--warn) }
 
 /* ---------- pages: Home, Artifacts ---------- */
 .page { max-width: 1080px; margin: 0 auto; padding: 8px var(--gutter) 48px }

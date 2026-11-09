@@ -31,7 +31,7 @@ export function renderHome(container, { recId, navigate }) {
   const page = h('div', { class: 'page home' },
     h('div', { class: 'home-grid' },
       fill(h('article', { class: 'glass panel' }, h('h2', { text: 'Attention Score' })), () => request('/attention/today'), drawScore),
-      fill(h('article', { class: 'glass panel' }, h('h2', { text: 'Second You' })), () => request('/you/progress'), p => drawYou(p, navigate)),
+      secondYouPanel(),
       fill(h('article', { class: 'glass panel span-2' },
         h('div', { class: 'panel-head' }, h('h2', { text: 'Recordings' }),
           h('button', { class: 'pill', type: 'button', onclick: () => iphoneOnly('Recording') }, icon('mic'), 'Record'))),
@@ -62,31 +62,15 @@ function drawScore(d) {
   return out;
 }
 
-const QUEST_CONNECT = { 'connect:calendar': 'google-calendar', 'connect:gmail': 'gmail' };
-function drawYou(p, navigate) {
-  const span = Math.max(1, (p.xp_next || 0) - (p.xp_level_floor || 0));
-  const into = Math.max(0, (p.xp || 0) - (p.xp_level_floor || 0));
-  const quests = (p.quests || []).filter(q => !q.done).slice(0, 4);
-  const act = async q => {
-    const a = q.action || '';
-    if (a === 'chat') return navigate('chat');
-    if (QUEST_CONNECT[a]) {
-      try { const r = await connectFlow(QUEST_CONNECT[a]); toast(`${r.name || 'App'} connected`); } catch (e) { if (e.message !== 'canceled') toast(e.message); }
-      return;
-    }
-    iphoneOnly(a === 'record' ? 'Recording' : a === 'quiz' ? 'The “Is this you?” quiz' : 'Training');
-  };
-  return [
-    h('div', { class: 'level-row' },
-      h('div', { class: 'level-badge', 'aria-hidden': 'true', text: String(p.level ?? 0) }),
-      h('div', {}, h('p', { class: 'score-label', text: `Level ${p.level ?? 0} · ${p.level_name || ''}` }),
-        h('p', { class: 'muted small', text: `${p.xp || 0} XP${p.streak_days ? ` · ${p.streak_days}-day streak` : ''}` }))),
-    meter(into, span, 'Progress to the next level'),
-    h('p', { class: 'muted small', text: `${p.percent_to_next_level ?? Math.round((100 * into) / span)}% to level ${(p.level ?? 0) + 1}` }),
-    quests.length ? h('ul', { class: 'quests' }, quests.map(q => h('li', {},
-      h('button', { class: 'quest', type: 'button', onclick: () => act(q) },
-        h('span', { text: q.title }), h('span', { class: 'xp', text: `+${q.xp} XP` }))))) : h('p', { class: 'muted small', text: 'All caught up.' }),
-  ];
+// Second You lives in the iPhone app: it learns and runs on the phone (Apple's on-device model), so the web has no
+// levels, quiz or training to show, only where to find it.
+function secondYouPanel() {
+  return h('article', { class: 'glass panel' },
+    h('h2', { text: 'Second You' }),
+    h('p', { text: 'Second You lives in the Attention iPhone app. It learns how you write and talk, and drafts replies like you, right on your iPhone with Apple’s on-device model.' }),
+    h('p', { class: 'muted small', text: 'Your style data never leaves your iPhone, so there is nothing to show here on the web.' }),
+    h('div', { class: 'callout' }, icon('shield'),
+      h('p', {}, 'Open Second You in the iPhone app. ', h('a', { class: 'text-link', href: CONFIG.testflight, target: '_blank', rel: 'noopener noreferrer' }, 'Get it on TestFlight'))));
 }
 
 const recTitle = s => {
@@ -178,7 +162,7 @@ export function openAccount(me, { focus, signOut, deleted } = {}) {
       h('button', { class: 'btn ghost wide', type: 'button', onclick: async e => { e.currentTarget.closest('dialog')?.__done(null); signOut(); } }, 'Sign out'),
       h('button', { class: 'btn ghost danger-text wide', type: 'button', onclick: async e => {
         const dlg = e.currentTarget.closest('dialog');
-        if (!await confirmDialog('Delete your account?', 'This permanently deletes your Attention account: recordings, transcripts, your Second You, connected apps and chat history on our servers. It cannot be undone. An App Store subscription must be canceled separately in your Apple ID settings.', 'Delete account', true)) return;
+        if (!await confirmDialog('Delete your account?', 'This permanently deletes your Attention account: recordings, transcripts, connected apps and chat history on our servers. Second You keeps its data only on your iPhone, and the iPhone app erases it when it signs out. It cannot be undone. An App Store subscription must be canceled separately in your Apple ID settings.', 'Delete account', true)) return;
         try { await request('/account/delete', { method: 'POST', body: {} }); dlg?.__done(null); deleted(); }
         catch (err) { toast(explain(err)); }
       } }, 'Delete account')),
