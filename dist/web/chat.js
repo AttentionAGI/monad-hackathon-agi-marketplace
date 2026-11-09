@@ -14,6 +14,7 @@ const SUGGESTIONS = ["What's on my calendar tomorrow?", 'Summarize my unread ema
 let me = null, hooks = {};
 let threads = [], currentId = null;
 let busy = null, gen = 0;
+const queued = [];                  // added while a task ran, and the task finished first: sent next
 let els = null;
 let progTimer = null, frameTimer = null, frameOn = false, frameTick = 0, frameUrl = null;
 let pending = [], preparing = 0, attachNote = '';     // the composer's attachments (not yet sent)
@@ -144,15 +145,21 @@ function startNew() {
 function updateComposer() {
   if (!els) return;
   const b = els.sendBtn;
-  b.replaceChildren(icon(busy ? 'stop' : 'send'));
-  b.setAttribute('aria-label', busy ? 'Stop' : 'Send');
-  b.classList.toggle('stop', !!busy);
+  const stops = busy && !els.input.value.trim();          // while it works: Stop, or Send once there's something to add
+  b.replaceChildren(icon(stops ? 'stop' : 'send'));
+  b.setAttribute('aria-label', stops ? 'Stop' : 'Send');
+  b.classList.toggle('stop', !!stops);
   b.disabled = !busy && ((!els.input.value.trim() && !pending.length) || preparing > 0);
 }
 
 function submit() {
-  if (busy) { stop(); return; }
   const text = els.input.value.trim();
+  if (busy) {
+    if (!text) { stop(); return; }
+    els.input.value = ''; grow(); updateComposer();
+    interject(text);
+    return;
+  }
   if ((!text && !pending.length) || preparing) return;
   const atts = pending; pending = []; attachNote = '';
   els.input.value = ''; grow(); renderTray(); updateComposer();
@@ -319,7 +326,7 @@ export async function send(text, { silent = false, display, attachments = [] } =
     const message = {
       role: 'user', kind: 'message', messageId: `w${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
       parts: buildParts(text, attachments),
-      metadata: { device: 'web', context: t.context.slice(-30).join('\n') },
+      metadata: { device: 'web', thread: t.id, context: t.context.slice(-30).join('\n') },
     };
     if (t.taskId) { message.taskId = t.taskId; if (t.contextId) message.contextId = t.contextId; }
     const task = await sendTask(message, { shouldStop: stopped, onReconnecting: on => reconnecting(live, on), sleep: nap.sleep });
@@ -349,7 +356,8 @@ function poll(t, live, id, stopped) {
     onReconnecting: on => reconnecting(live, on),
     onUpdate: task => {                                   // the step it's on (tasks/get carries it too)
       const p = task?.metadata?.progress;
-      if (p?.small && live.text !== p.small) { live.text = p.small; const el = document.getElementById('live-text'); if (el) el.textContent = p.small; }
+      const shown = task?.metadata?.partial || p?.small;      // the reply as it is written, else the step it's on
+      if (shown && live.text !== shown) { live.text = shown; const el = document.getElementById('live-text'); if (el) el.textContent = shown; }
     },
   });
 }
@@ -391,6 +399,7 @@ function settle(t, my) {
   t.updated = Date.now();
   save(); render(true);
   hooks.taskFinished?.();
+  sendQueued();
 }
 
 function reconnecting(it, on) {
@@ -405,6 +414,7 @@ function applyTask(t, live, task) {
   const data = parts.find(p => p?.kind === 'data')?.data || {};
   const state = task?.status?.state;
   const actions = Array.isArray(data.actions) ? data.actions : null;
+  for (const m of task?.metadata?.unread || []) if (!queued.includes(m)) queued.push(m);
   t.context.push(`agent: ${data.reply || [data.big, data.small].filter(Boolean).join(' — ') || text}`);
   Object.assign(live, { domain: data.domain || null, page: data.page || null, irreversible: !!data.irreversible, takeover: !!data.takeover });
   if (state === 'input-required') {
@@ -439,6 +449,25 @@ async function cancelTask(t, it) {
   t.items.push({ id: uid(), role: 'agent', kind: 'canceled', text: 'Canceled', fresh: 0 });
   save(); render(true);
   if (id) rpc('tasks/cancel', { id }).catch(() => {});
+}
+
+/** The user adds something while a task runs: it goes into that run. Too late for it? It's sent once the run has settled. */
+async function interject(text) {
+  const t = threads.find(x => x.id === busy?.threadId);
+  const live = t?.items.find(i => i.id === busy.itemId);
+  if (!t || !live) { queued.push(text); return; }
+  t.items.splice(t.items.indexOf(live), 0, { id: uid(), role: 'user', kind: 'text', text, fresh: 0 });
+  t.context.push(`user: ${text}`);
+  t.updated = Date.now(); save(); render(true);
+  let taken = false;
+  if (live.pollId) try { taken = (await rpc('tasks/interject', { id: live.pollId, text }))?.accepted === true; } catch { /* sent after it settles */ }
+  if (!taken) { queued.push(text); if (!busy) sendQueued(); }
+}
+
+function sendQueued() {
+  if (busy || !queued.length) return;
+  const text = queued.splice(0).join('\n');
+  send(text, { silent: true });
 }
 
 function stop() {
