@@ -25,7 +25,7 @@
 <div class="callout"><p><strong>The short version:</strong> we keep only your own voice, not the people around you. Mixed recordings are deleted after transcription, and your voice segments are kept for 60 days. We don’t sell your data, don’t use it for advertising, and don’t track you across other companies’ apps or websites. Nothing is sent, submitted, or paid for on your behalf without your explicit approval. You can delete your account and all your data in the app at any time.</p></div>
 
 <nav class="toc" aria-label="Contents">
-  <a href="#collect">What we collect</a><a href="#audio">Audio &amp; voice</a><a href="#use">How we use it</a><a href="#processors">Service providers</a><a href="#health">Apple Health</a><a href="#connectors">Connectors &amp; Google</a><a href="#browser">Cloud browser</a><a href="#retention">Retention &amp; deletion</a><a href="#rights">Your rights</a><a href="#children">Children</a><a href="#contact">Contact</a>
+  <a href="#collect">What we collect</a><a href="#audio">Audio &amp; voice</a><a href="#use">How we use it</a><a href="#processors">Service providers</a><a href="#health">Apple Health</a><a href="#connectors">Connectors &amp; Google</a><a href="#browser">Cloud browser</a><a href="#saved-logins">Saved logins</a><a href="#retention">Retention &amp; deletion</a><a href="#rights">Your rights</a><a href="#children">Children</a><a href="#contact">Contact</a>
 </nav>
 
 <h2 id="collect">1. Information we collect</h2>
@@ -111,13 +111,23 @@
 <p><strong>Deleting Google data.</strong> When you disconnect a Google account in Attention, we revoke our access with Google (unless another Attention feature you still use relies on the same Google sign-in) and delete that account’s tokens, cached events, picked-file IDs and Second You notes within 30 days. When you delete your Attention account (Account → Delete Account), we delete all of it. You can also email <a href="mailto:wenxin@attentionai.dev">wenxin@attentionai.dev</a> to ask us to delete your Google user data.</p>
 
 <h2 id="browser">8. Cloud browser</h2>
-<p>When you ask, Attention’s agent can operate websites on your behalf in a browser that runs in the cloud. The agent <strong>stops and asks for your approval before any submit, pay, or send action</strong>, and it <strong>never types your passwords</strong>. The pages it visits and the actions it takes are processed only to complete your task.</p>
+<p>When you ask, Attention’s agent can operate websites on your behalf in a browser that runs in the cloud. The agent <strong>stops and asks for your approval before any submit, pay, or send action</strong>, and the AI model <strong>never types or sees your passwords</strong>. The pages it visits and the actions it takes are processed only to complete your task. Google sign-in is never done in the cloud browser; you connect Google with its own sign-in screen instead (section 7).</p>
+
+<h3 id="saved-logins">Saved logins</h3>
+<p>You can save a website login (site, username and password) in <strong>Account → Saved logins</strong> so the cloud browser can sign you back in to that site.</p>
+<ul>
+  <li><strong>Encrypted.</strong> Saved logins are stored encrypted (AES-256) on our servers, with a key unique to your account.</li>
+  <li><strong>Used only on that exact site.</strong> A saved login is filled in only on a secure (https) page of the exact site you saved it for, never on a look-alike site and never into a form embedded from another site.</li>
+  <li><strong>Never shown to the AI model.</strong> Our code fills in the login. The AI model only learns whether the sign-in worked, and the app never shows your saved password again.</li>
+  <li><strong>Deletable any time.</strong> Swipe to delete a saved login in the app. Deleting your account deletes all of them.</li>
+</ul>
 
 <h2 id="retention">9. Retention and deletion</h2>
 <ul>
   <li>Your own voice segments: 60 days, then deleted.</li>
   <li>Mixed recordings: deleted after transcription.</li>
   <li>Transcripts, content, and account data: kept while your account is active, until you delete them or your account.</li>
+  <li>Saved logins: kept until you delete them or your account.</li>
   <li>Data from connected apps, including Google: see “What we keep and for how long” in section 7. Disconnecting an app deletes the data we hold from it within 30 days.</li>
 </ul>
 <p><strong>Delete your account:</strong> in the app, go to <strong>Account → Delete Account</strong>. This deletes your account and all associated data. You can also email <a href="mailto:wenxin@attentionai.dev">wenxin@attentionai.dev</a> from the email associated with your account and ask us to delete it. Deleting your account does not cancel an Apple subscription; see <a href="/support/#cancel">Support</a>.</p>
