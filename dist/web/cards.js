@@ -1,11 +1,12 @@
-// Cards under an agent reply (data.actions): open_app, connect, disconnect, open, plan. Nothing here orders, pays,
+// Cards under an agent reply (data.actions): open_app, deal, connect, disconnect, open, plan. Nothing here orders, pays,
 // sends or buys: open_app opens the other site and the user finishes there; plans are App Store only.
 import { request } from './api.js';
+import { openCloudBrowser, validDeal } from './browser.js';
 import { connectFlow } from './auth.js';
 import { CONFIG, h, icon, confirmDialog, toast, iphoneOnly, cleanWebUrl } from './ui.js';
 export { cleanWebUrl };
 
-const KNOWN = new Set(['open_app', 'connect', 'disconnect', 'open', 'plan']);
+const KNOWN = new Set(['open_app', 'deal', 'connect', 'disconnect', 'open', 'plan']);
 const OUTGOING = new Set(['pay', 'message']);
 
 function prefillChips(prefill) {
@@ -31,11 +32,12 @@ function group(actions) {
  * ctx: { changed(): persist + re-render, navigate(target), refresh?() }
  */
 export function renderActions(actions, ctx) {
-  const list = (actions || []).filter(a => a && KNOWN.has(a.type));
+  const list = (actions || []).filter(a => a && KNOWN.has(a.type) && (a.type !== 'deal' || validDeal(a)));
   if (!list.length) return null;
   return h('div', { class: 'cards' }, group(list).map(g => {
     switch (g.main.type) {
       case 'open_app': return openAppCard(g.main, g.alts, ctx);
+      case 'deal': return dealCard(g.main, ctx);
       case 'connect': return connectCard(g.main, ctx);
       case 'disconnect': return disconnectCard(g.main, ctx);
       case 'open': return openCard(g.main, ctx);
@@ -74,6 +76,49 @@ function openAppCard(a, alts, ctx) {
         !cleanWebUrl(a.web_url) ? h('p', { class: 'card-note', text: `${a.name} opens from the iPhone app.` }) : null],
     alts.length && !opened ? h('div', { class: 'alts' }, h('span', { class: 'muted small', text: 'Or' }),
       alts.map(x => h('button', { class: 'pill', type: 'button', 'aria-label': verb(x), onclick: () => open(x) }, x.name))) : null);
+}
+
+const money = v => (typeof v === 'number' && isFinite(v))
+  ? v.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: Number.isInteger(v) ? 0 : 2 }) : '';
+
+
+/** "Cheaper option": the same product at another US store. View (new tab) · Cloud browser · No thanks. Never buys. */
+function dealCard(a, ctx) {
+  const store = a.store || 'another store';
+  const view = () => {
+    const url = cleanWebUrl(a.web_url);
+    if (!url) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    a._state = 'done'; a._note = `Opened at ${store} — finish there`; ctx.changed();
+  };
+  const cloud = async () => {
+    a._busy = true; a._err = ''; ctx.changed();
+    const why = await openCloudBrowser(a.web_url, a.title || 'Cloud browser');
+    a._busy = false;
+    if (why) a._err = why; else { a._state = 'done'; a._note = 'Opened in your cloud browser'; }
+    ctx.changed();
+  };
+  const no = () => { a._state = 'dismissed'; ctx.changed(); };
+  const saveLine = typeof a.was === 'number' && typeof a.save === 'number'
+    ? h('p', { class: 'deal-was' }, h('s', { text: money(a.was) }), a.was_store ? ` at ${a.was_store} · ` : ' · ',
+      h('span', { class: 'deal-save', text: `Save ${money(a.save)}${typeof a.save_pct === 'number' ? ` (${a.save_pct}%)` : ''}` }))
+    : null;
+  return h('article', { class: 'card deal' },
+    h('div', { class: 'card-head' }, h('span', { class: 'app-badge deal-badge', 'aria-hidden': 'true', text: '$' }),
+      h('div', {}, h('div', { class: 'card-kicker', text: 'Cheaper option' }), h('div', { class: 'card-title', text: a.title || 'This item' }))),
+    h('p', { class: 'deal-price' }, h('strong', { text: money(a.price) }), ` at ${store}`),
+    saveLine,
+    a._state === 'dismissed' ? h('p', { class: 'card-note', text: 'Dismissed' })
+      : a._state === 'done'
+        ? [h('p', { class: 'done-line' }, icon('check'), a._note || 'Opened'),
+          h('button', { class: 'pill', type: 'button', onclick: view }, 'Open again ', icon('ext'))]
+        : [h('p', { class: 'deal-ask', text: 'Want to see it?' }),
+          h('button', { class: 'btn wide', type: 'button', onclick: view }, `View at ${store}`, icon('ext')),
+          h('div', { class: 'alts' },
+            h('button', { class: 'pill', type: 'button', onclick: cloud, disabled: !!a._busy, 'aria-busy': a._busy ? 'true' : null }, icon('globe'), a._busy ? ' Opening…' : ' Cloud browser'),
+            h('button', { class: 'pill', type: 'button', onclick: no }, 'No thanks'))],
+    a._err ? h('p', { class: 'card-note error', text: a._err }) : null,
+    h('p', { class: 'card-note', text: a.note || 'Before tax and shipping. You check out yourself.' }));
 }
 
 function connectCard(a, ctx) {

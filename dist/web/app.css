@@ -441,3 +441,15 @@ dialog.sheet[open] { animation: slide-in .28s cubic-bezier(.2,.8,.2,1) }
 .choice[aria-pressed="true"] .choice-box { background: currentColor; box-shadow: inset 0 0 0 2px var(--button) }
 .choice-send { align-self: flex-start }
 .choice-send[hidden] { display: none }
+/* ---------- cheaper-option card + the cloud browser window ---------- */
+.card.deal { border-color: rgba(115,230,153,.35) }
+.deal-badge { background: linear-gradient(160deg, #3ecf72, #1f9d55); color: #fff }
+.deal-price { margin: 0; font-size: 15px } .deal-price strong { font-size: 22px; font-weight: 700 }
+.deal-was { margin: 0; font-size: 13px; color: var(--muted) }
+.deal-save { color: #73e699; font-weight: 600 }
+.deal-ask { margin: 0; font-size: 14px; font-weight: 600 }
+dialog.dialog.cloud-browser { width: min(460px, calc(100vw - 16px)) }
+.cb-wrap { display: flex; justify-content: center; margin: 8px 0 }
+.cb-frame { width: 100%; max-height: calc(100dvh - 240px); object-fit: contain; border-radius: 14px; border: 1px solid var(--stroke); cursor: pointer; background: #000; user-select: none; touch-action: none }
+.cb-row { display: flex; gap: 6px; align-items: center }
+.cb-input { flex: 1; min-width: 0; height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--stroke); background: rgba(255,255,255,.08); color: var(--text); font: inherit }
