@@ -277,6 +277,7 @@ function itemNode(t, it, isLastAgent) {
         h('div', { class: 'md', html: md(it.text) }),
         it.takeover ? h('p', { class: 'card-note', text: 'This step needs you on the cloud browser (for example, signing in). Use Take over in the iPhone app, then continue here.' }) : null),
       it.domain === 'web' ? frameNode() : null,
+      pending ? choiceNode(it) : null,
       pending ? h('div', { class: 'quick' },
         it.takeover ? h('button', { class: 'pill', type: 'button', onclick: () => send('done', { display: 'Done — continue' }) }, 'Done — continue') : h('span', { class: 'muted small', text: 'Reply below' }),
         h('button', { class: 'pill', type: 'button', onclick: () => cancelTask(t, it) }, 'Cancel')) : null);
@@ -287,8 +288,35 @@ function itemNode(t, it, isLastAgent) {
     case 'canceled':
       return row('agent system', h('p', { class: 'system-line', text: it.text || 'Canceled' }));
     default:
-      return row('agent', it.text ? h('div', { class: 'bubble agent md', html: md(it.text) }) : null, renderActions(it.actions, cardCtx(t)));
+      return row('agent', it.text ? h('div', { class: 'bubble agent md', html: md(it.text) }) : null, renderActions(it.actions, cardCtx(t)),
+        isLastAgent && !busy ? choiceNode(it) : null);
   }
+}
+
+/** Tappable picks from a reply ({question, options, multi}) or a question's own options. */
+function pickList(data) {
+  const c = data && typeof data.choices === 'object' && data.choices ? data.choices : (data?.ask && Array.isArray(data.options) ? { options: data.options } : null);
+  const options = (c?.options || []).map(o => String(o || '').trim()).filter(Boolean).slice(0, 6);
+  return options.length >= 2 ? { options, multi: !!c.multi } : null;
+}
+
+/** One tap sends a single pick; with multi, tap several, then Send. */
+function choiceNode(it) {
+  const c = it.choices;
+  if (!c) return null;
+  const picked = new Set();
+  const sendBtn = h('button', { class: 'btn choice-send', type: 'button', hidden: true, onclick: () => send([...picked].join(', ')) }, 'Send');
+  const chips = c.options.map(o => {
+    const b = h('button', { class: 'choice', type: 'button', 'aria-pressed': 'false' }, c.multi ? h('span', { class: 'choice-box', 'aria-hidden': 'true' }) : null, o);
+    b.onclick = () => {
+      if (!c.multi) { send(o); return; }
+      if (picked.has(o)) picked.delete(o); else picked.add(o);
+      b.setAttribute('aria-pressed', String(picked.has(o)));
+      sendBtn.hidden = picked.size === 0; sendBtn.textContent = picked.size ? `Send ${picked.size}` : 'Send';
+    };
+    return b;
+  });
+  return h('div', { class: 'choices' }, c.multi ? h('p', { class: 'muted small', text: 'Pick any' }) : null, h('div', { class: 'choice-row' }, chips), c.multi ? sendBtn : null);
 }
 
 function frameNode() {
@@ -420,6 +448,7 @@ function applyTask(t, live, task) {
   if (state === 'input-required') {
     t.taskId = task.id || t.taskId; t.contextId = task.contextId || t.contextId;
     live.kind = data.ask ? 'question' : 'confirm';
+    live.choices = data.ask ? pickList(data) : null;
     live.text = data.ask ? (text || data.small) : (text.replace(/^Approve\s*[—-]\s*/, '') || data.small || 'Approve this?');
     return;
   }
@@ -435,11 +464,14 @@ function applyTask(t, live, task) {
   if (state === 'canceled') { live.kind = 'canceled'; live.text = 'Canceled'; return; }
   const body = data.reply || text || data.small || data.big || 'Done.';
   const ps = paragraphs(body);
+  const choices = pickList(data);
   live.kind = 'text';
   live.text = ps[0] || body;
   live.actions = ps.length > 1 ? null : actions;
+  live.choices = ps.length > 1 ? null : choices;
   const at = t.items.indexOf(live);
-  const more = ps.slice(1).map((p, i) => ({ id: uid(), role: 'agent', kind: 'text', text: p, fresh: i + 2, actions: i === ps.length - 2 ? actions : null }));
+  const more = ps.slice(1).map((p, i) => ({ id: uid(), role: 'agent', kind: 'text', text: p, fresh: i + 2, actions: i === ps.length - 2 ? actions : null,
+                                            choices: i === ps.length - 2 ? choices : null }));
   t.items.splice(at + 1, 0, ...more);
 }
 

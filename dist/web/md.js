@@ -11,7 +11,7 @@ const TOKEN = new RegExp([
   '(?<![\\w*])\\*([^*\\s][^*\\n]*?)\\*(?![\\w*])',                       // 7 italic
 ].join('|'), 'g');
 
-const link = (url, inner) => `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${inner}</a>`;
+const link = (url, inner) => `<a class="lk" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${inner}<span class="lk-arrow" aria-hidden="true">\u00a0↗</span></a>`;
 
 export function inline(s) {
   let out = '', last = 0;
@@ -28,6 +28,8 @@ export function inline(s) {
 }
 
 const BULLET = /^\s*[-*•]\s+(.*)$/;
+const RULE = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
+const cells = l => l.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
 const NUMBER = /^\s*(\d{1,3})[.)]\s+(.*)$/;
 
 /** Markdown -> safe HTML string. */
@@ -44,6 +46,15 @@ export function md(text) {
       const code = [];
       for (i++; i < lines.length && !/^\s*```/.test(lines[i]); i++) code.push(lines[i]);
       out.push(`<pre><code>${esc(code.join('\n'))}</code></pre>`);
+      continue;
+    }
+    if (line.includes('|') && i + 1 < lines.length && RULE.test(lines[i + 1])) {   // a markdown table
+      flushPara(); flushList();
+      const head = cells(line), rows = [];
+      for (i += 2; i < lines.length && lines[i].includes('|') && lines[i].trim(); i++) rows.push(cells(lines[i]).slice(0, head.length));
+      i--;
+      out.push(`<div class="mdt-wrap"><table class="mdt"><thead><tr>${head.map(c => `<th>${inline(c)}</th>`).join('')}</tr></thead>` +
+        `<tbody>${rows.map(r => `<tr>${head.map((_, k) => `<td>${inline(r[k] || '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`);
       continue;
     }
     if (!line.trim()) { flushPara(); flushList(); continue; }

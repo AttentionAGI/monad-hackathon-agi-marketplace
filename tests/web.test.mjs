@@ -11,8 +11,8 @@ test('model text is escaped; only safe markdown becomes markup', () => {
   assert.match(html, /<strong>bold<\/strong>/);
   assert.match(html, /<em>it<\/em>/);
   assert.match(html, /<ul><li>one<\/li><li>two<\/li><\/ul>/);
-  assert.match(html, /<a href="https:\/\/a\.example\/\?q=&quot;1&quot;" target="_blank" rel="noopener noreferrer">ok<\/a>/);
-  assert.match(inline('see https://example.com/path.'), /<a href="https:\/\/example\.com\/path"[^>]*>example\.com\/path<\/a>\./);
+  assert.match(html, /<a class="lk" href="https:\/\/a\.example\/\?q=&quot;1&quot;" target="_blank" rel="noopener noreferrer">ok<span class="lk-arrow" aria-hidden="true">\u00a0↗<\/span><\/a>/);
+  assert.match(inline('see https://example.com/path.'), /<a class="lk" href="https:\/\/example\.com\/path"[^>]*>example\.com\/path<span class="lk-arrow"[^>]*>\u00a0↗<\/span><\/a>\./);
   assert.match(md('```\n<b>x</b>\n```'), /<pre><code>&lt;b&gt;x&lt;\/b&gt;<\/code><\/pre>/);
   assert.match(inline('`<i>` <i>'), /<code>&lt;i&gt;<\/code> &lt;i&gt;/);
 });
@@ -31,4 +31,11 @@ test('open_app web_url drops geocode placeholders and non-web schemes', () => {
   assert.equal(cleanWebUrl('javascript:alert(1)'), null);
   assert.equal(cleanWebUrl('uber://?action=setPickup'), null);
   assert.equal(cleanWebUrl(''), null);
+});
+
+test('markdown tables become escaped HTML tables, links inside stay safe', () => {
+  const html = md('| Item | Price |\n|---|---|\n| [Towel](https://www.amazon.com/s?k=t) | $16 |\n| <b>x</b> | 1 |');
+  assert.match(html, /<table class="mdt"><thead><tr><th>Item<\/th><th>Price<\/th><\/tr><\/thead>/);
+  assert.match(html, /<td><a class="lk" href="https:\/\/www\.amazon\.com\/s\?k=t"/);
+  assert.match(html, /<td>&lt;b&gt;x&lt;\/b&gt;<\/td>/);
 });

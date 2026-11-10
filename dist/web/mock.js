@@ -28,6 +28,9 @@ function reply(text, m) {
   const t = text.toLowerCase();
   if (m.taskId && t === 'yes') return taskObj('completed', 'Sent. Sam has your note.', { big: 'Sent', small: 'Sent your email to Sam', domain: 'apps' });
   if (m.taskId && t === 'no') return taskObj('canceled', 'Canceled.', { big: 'Canceled', small: '' });
+  if (/towel|毛巾/.test(t)) return taskObj('completed', '', { big: 'Answer', domain: 'shop',
+    reply: 'Three good full-cotton picks on Amazon:\n\n| Item | Price | Rating |\n|---|---|---|\n| [Knit pillow towels](https://www.amazon.com/s?k=knit%20pillow%20towel) | $17.99 | 5.0★ (2) |\n| [KAF Porto hand towel](https://www.amazon.com/s?k=kaf%20porto) | $16 | 4.8★ (8) |\n\nWhich ones should I add?',
+    choices: { question: 'Which ones?', options: ['Knit pillow towels', 'KAF Porto hand towel'], multi: true } });
   if (/pad thai|order|dinner|food/.test(t)) return taskObj('completed', '', { big: 'Open', small: '', domain: 'food', reply: 'Pad Thai on DoorDash — tap to open, you place the order. Or try Uber Eats / Grubhub.', actions: FOOD });
   if (/venmo|pay /.test(t)) return taskObj('completed', '', { big: 'Open', domain: 'pay', reply: 'Venmo is ready to pay Sam $24 — tap to open; nothing is sent until you confirm it in Venmo.', actions: VENMO });
   if (/notion/.test(t)) return taskObj('completed', '', { big: 'Connect', domain: 'app_action', reply: "Notion isn't connected yet. Connect it below, then ask me again.", actions: [NOTION] });
