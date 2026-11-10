@@ -18,7 +18,7 @@
 <article class="glass doc">
 <p class="eyebrow">ATTENTION AI, INC.</p>
 <h1>Privacy Policy</h1>
-<p class="meta">Effective date: November 7, 2026 · Last updated: November 9, 2026</p>
+<p class="meta">Effective date: November 7, 2026 · Last updated: November 10, 2026</p>
 
 <p>This Privacy Policy explains how Attention AI, Inc. (“Attention,” “we,” “us”) collects, uses, shares, and protects information when you use the Attention iOS app, the Attention voice recorder card, and related services (together, the “Service”). If you have questions, email <a href="mailto:wenxin@attentionai.dev">wenxin@attentionai.dev</a>.</p>
 
@@ -45,7 +45,7 @@
 <p><strong>Learning your style (Second You).</strong> Second You learns and runs on your iPhone, in the Attention iPhone app. It learns how you write and talk from your own voice in your recordings (only the transcript lines our transcription marks as yours, which the app downloads from your account) and from what you type to Attention in the iPhone app.</p>
 <ul>
   <li><strong>Your style data stays on your iPhone.</strong> The lines Second You learns from, and the style profile and examples it builds from them, are stored only on your iPhone, encrypted with iOS Data Protection and excluded from iCloud and device backups. They are never uploaded to our servers, and we no longer keep the messages you send Attention as style data.</li>
-  <li><strong>On-device AI.</strong> Second You writes its replies, its “Is this you?” cards and your daily question with Apple’s on-device model (Apple Intelligence), so no cloud AI service sees them. If your iPhone can’t run Apple’s on-device model, the app tells you and keeps learning on the iPhone; it never sends Second You to a cloud model instead. Second You’s levels, XP and achievements are also computed and stored on your iPhone.</li>
+  <li><strong>On-device AI.</strong> Second You writes its replies, its “Is this you?” cards and your daily question with Apple’s on-device model (Apple Intelligence), so no cloud AI service sees them. If your iPhone can’t run Apple’s on-device model (for example, iPhones sold in mainland China), Second You keeps learning on the iPhone, and you can choose to turn on <em>Use cloud AI</em> in Second You. It is off unless you turn it on. When it is on, each time Second You writes, your style profile and a few of your example lines are sent through our servers to Anthropic (Claude) to write that one reply, card or question; we don’t store them, and you can turn it off any time. Second You’s levels, XP and achievements are also computed and stored on your iPhone.</li>
   <li><strong>Your controls.</strong> You can turn learning off for each source any time in the app (Second You → Training sources), which also deletes what was stored from that source, and you can delete everything Second You learned in its Agent profile. Signing out or deleting your account removes it from the iPhone.</li>
   <li><strong>Moving from our servers.</strong> If you used an earlier version that kept your Second You profile on our servers, the app downloads it to your iPhone once and we then delete it from our servers.</li>
 </ul>
@@ -74,8 +74,9 @@
 <h2 id="processors">4. Service providers that process your data</h2>
 <p>We share data with the following providers <strong>only as needed to provide the feature you are using</strong>. They process it on our behalf and not for advertising.</p>
 <ul>
-  <li><strong>Anthropic (Claude)</strong> — generates AI assistant responses. When you ask about your connected apps, the relevant data from them (including Google user data) is sent to Anthropic for this purpose only. Anthropic does not use it to train its models.</li>
+  <li><strong>Anthropic (Claude)</strong> — generates AI assistant responses (and Second You’s, only if you turn on its cloud AI). When you ask about your connected apps, the relevant data from them (including Google user data) is sent to Anthropic for this purpose only. Anthropic does not use it to train its models.</li>
   <li><strong>ElevTalk</strong> — speech services: transcription and speaker identification.</li>
+  <li><strong>TypeSafe (Jev)</strong> — a small decision model. The text of a message you send to Attention is sent to TypeSafe to decide, in a fraction of a second, whether it is a task on a single website. Nothing else about you is sent.</li>
   <li><strong>Amazon Web Services</strong> — hosting and storage, in the United States.</li>
   <li><strong>Apple Push Notification service</strong> — delivers notifications to your device.</li>
   <li><strong>Apple</strong> — Sign in with Apple and in-app subscription billing.</li>
