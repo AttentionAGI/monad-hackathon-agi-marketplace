@@ -18,7 +18,7 @@
 <article class="glass doc">
 <p class="eyebrow">ATTENTION AI, INC.</p>
 <h1>Privacy Policy</h1>
-<p class="meta">Effective date: November 7, 2026 · Last updated: November 10, 2026</p>
+<p class="meta">Effective date: November 7, 2026 · Last updated: November 11, 2026</p>
 
 <p>This Privacy Policy explains how Attention AI, Inc. (“Attention,” “we,” “us”) collects, uses, shares, and protects information when you use the Attention iOS app, the Attention voice recorder card, and related services (together, the “Service”). If you have questions, email <a href="mailto:wenxin@attentionai.dev">wenxin@attentionai.dev</a>.</p>
 
@@ -34,7 +34,7 @@
   <li><strong>Audio and transcripts.</strong> Audio you record with your iPhone’s microphone or with the Attention card, and the transcripts we create from it. See <a href="#audio">section 2</a>.</li>
   <li><strong>Voiceprint.</strong> A voice profile of your own voice, used to tell your speech apart from other speakers’ so we keep only yours.</li>
   <li><strong>Content you create.</strong> Messages you send to the assistant, its responses, and artifacts, notes, or drafts produced in the app.</li>
-  <li><strong>Wellness estimates.</strong> Attention Score estimates the app derives from your conversations (see <a href="#wellness">section 5</a>).</li>
+  <li><strong>Wellness estimates.</strong> Stress score estimates the app derives from your own voice and your conversations (see <a href="#wellness">section 5</a>).</li>
   <li><strong>Sleep data (optional).</strong> If you allow it, sleep analysis from Apple Health (see <a href="#health">section 6</a>).</li>
   <li><strong>Connected-account data (optional).</strong> If you connect services such as Gmail, Google Calendar, Google Drive, or Calendly, the data those services make available under the permissions you grant (see <a href="#connectors">section 7</a>).</li>
   <li><strong>Device and notification data.</strong> An Apple Push Notification service token so we can send you notifications such as check-ins, and basic technical information needed to operate the Service.</li>
@@ -85,8 +85,8 @@
 </ul>
 <p>We may also disclose information if required by law, to protect the rights, safety, or property of our users or others, or in connection with a merger, acquisition, or sale of assets, in which case this policy will continue to apply to your information. Google user data is transferred in such a transaction only with your explicit prior consent.</p>
 
-<h2 id="wellness">5. Attention Score</h2>
-<p>Attention may show a daily <strong>Attention Score</strong>: an estimate of how loaded your day was (for example, time in conversations, your longest uninterrupted stretch, and open commitments), compared with your own recent days. It is <strong>an estimate of your day's load, not medical advice, diagnosis, or treatment</strong>, and you should not rely on it for health decisions.</p>
+<h2 id="wellness">5. Stress score</h2>
+<p>Attention may show a <strong>Stress score</strong> for each recorded conversation and for your day. It is worked out from three things together: how <strong>your own voice</strong> sounded (for example pitch, loudness, pace and pauses — measured only on your own voice segments), compared with your own calm baseline (the short lines you read in a calm voice when you set up your voice) or with your own usual; what was said in the conversation; and how the conversation went (for example how often you were talked over). An AI model combines them into the score, a short description and the reasons shown to you. Other people’s voices are never analysed. The score is shown only to you; it is <strong>an estimate for your own wellness, not medical advice, diagnosis, or treatment</strong>, and you should not rely on it for health decisions. The voice measurements and scores are kept with your account and deleted when you delete your account.</p>
 
 <h2 id="health">6. Apple Health (optional)</h2>
 <p>If you grant permission, Attention <strong>reads sleep analysis data only</strong> from Apple Health, and only to time your morning and evening check-ins. Attention <strong>never writes</strong> data to Apple Health. Health data is <strong>never used for advertising or marketing</strong>, is <strong>not sold</strong>, and is <strong>not shared</strong> with third parties. Our use of HealthKit data complies with Apple’s HealthKit guidelines and the App Store Review Guidelines. You can revoke access at any time in iOS Settings → Health → Data Access &amp; Devices → Attention.</p>
@@ -97,6 +97,7 @@
   <li><strong>Google Calendar (read-only).</strong> Attention can see the list of calendars in your account and read their events (title, time, attendees and meeting link). We use this to remind you shortly before a meeting starts, with its link (our server checks your upcoming events every few hours to do this); and to answer questions about your schedule, such as “What’s on my calendar tomorrow?”. Attention cannot create, change or delete your events.</li>
   <li><strong>Google Drive (only files you choose).</strong> Attention uses Google’s limited “drive.file” permission. It can open only the files you pick in Google’s file picker and files Attention creates for you. It cannot see the rest of your Drive. We read the files you picked when you ask about them.</li>
   <li><strong>Gmail.</strong> Attention can read your email, create drafts, and send an email you asked for. Before anything is sent, the app shows you the whole email — recipients, subject and full text — and <strong>nothing is sent until you tap Send.</strong></li>
+  <li><strong>Email reminders (Pro and Max, while Gmail is connected).</strong> A few times a day (daytime only) Attention reads your recent email — read-only — to find things you may have missed: emails waiting for your reply, things you promised in a sent email, bills and deadlines due soon, and replies you are waiting for. It sends you a short reminder for each (links and phone numbers are removed from notifications). Nothing is drafted or sent unless you tap Help me and then approve. Disconnecting Gmail stops the reminders and deletes the ones already saved.</li>
 </ul>
 <p><strong>How Google user data is shared.</strong> To answer you, the relevant Google data (for example, the titles and times of tomorrow’s events, or the text of a file you picked) is sent from our servers to Anthropic, which provides the AI model that writes Attention’s replies. Anthropic processes it only on our behalf to provide this feature and does not use it to train its models. We do not share Google user data with anyone else, except as required by law or to protect safety and security.</p>
 <p><strong>No AI model training.</strong> We do not use Google user data, or anything derived from it, to create, train, fine-tune or improve any artificial-intelligence or machine-learning model, whether ours or anyone else’s. Second You does not use Google user data: it learns on your iPhone from your own voice and what you type, and it does not change any AI model.</p>
