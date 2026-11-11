@@ -264,12 +264,14 @@ function itemNode(t, it, isLastAgent) {
       return row('agent', h('article', { class: 'card approval' },
         h('div', { class: 'approval-head' }, icon('shield'), h('span', { text: 'Needs your OK' })),
         h('div', { class: 'md', html: md(it.text) }),
+        (it.emails || []).map(emailNode),
         it.page ? h('p', { class: 'card-note', text: `On ${it.page}` }) : null,
         it.domain === 'web' ? frameNode() : null,
         pending
-          ? [h('p', { class: 'card-note', text: 'Nothing happens until you approve.' }),
+          ? [(it.emails || []).length ? null : h('p', { class: 'card-note', text: 'Nothing happens until you approve.' }),
             h('div', { class: 'card-actions' },
-              h('button', { class: 'btn', type: 'button', onclick: () => send('yes', { silent: true }) }, icon('check'), 'Approve'),
+              h('button', { class: 'btn', type: 'button', onclick: () => send('yes', { silent: true }) }, icon('check'),
+                (it.emails || []).length ? (it.emails.some(e => e.mode === 'send') ? 'Send' : 'Save draft') : 'Approve'),
               h('button', { class: 'btn ghost', type: 'button', onclick: () => send('no', { silent: true }) }, 'Cancel'))]
           : h('p', { class: `done-line ${it.answer === 'Canceled' ? 'muted' : ''}` }, icon(it.answer === 'Canceled' ? 'close' : 'check'), it.answer || 'Closed')));
     case 'question':
@@ -301,6 +303,15 @@ function pickList(data) {
 }
 
 /** One tap sends a single pick; with multi, tap several, then Send. */
+// One email waiting for the OK, exactly as it will go out: From / To / Cc / Subject, then the whole body.
+function emailNode(e) {
+  const row = (k, v) => v ? h('div', { class: 'em-row' }, h('span', { class: 'em-k', text: k }), h('span', { class: `em-v ${k === 'Subject' ? 'em-subj' : ''}`, text: v })) : null;
+  return h('div', { class: 'email-preview' },
+    h('div', { class: 'em-head' }, row('From', e.account || ''), row('To', e.to || '—'), row('Cc', e.cc || ''), row('Bcc', e.bcc || ''),
+      row('Subject', e.subject || (e.reply ? 'Re: …' : '(no subject)'))),
+    h('div', { class: 'em-body', text: e.body || '' }));
+}
+
 function choiceNode(it) {
   const c = it.choices;
   if (!c) return null;
@@ -449,6 +460,7 @@ function applyTask(t, live, task) {
     t.taskId = task.id || t.taskId; t.contextId = task.contextId || t.contextId;
     live.kind = data.ask ? 'question' : 'confirm';
     live.choices = data.ask ? pickList(data) : null;
+    live.emails = !data.ask && Array.isArray(data.previews) ? data.previews.filter(e => e && e.kind === 'email') : null;
     live.text = data.ask ? (text || data.small) : (text.replace(/^Approve\s*[—-]\s*/, '') || data.small || 'Approve this?');
     return;
   }

@@ -204,6 +204,13 @@ img.app-badge { object-fit: cover; background: none }
 .approval-head { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 650; letter-spacing: .3px; text-transform: uppercase; color: var(--logo-pink) }
 .approval-head .icon { width: 16px; height: 16px }
 .approval .md { font-size: 15.5px; line-height: 1.5 }
+.email-preview { margin: 10px 0 4px; border: 1px solid var(--line, rgba(127,127,127,.25)); border-radius: 12px; overflow: hidden }
+.email-preview .em-head { padding: 10px 12px; display: grid; gap: 5px; border-bottom: 1px solid var(--line, rgba(127,127,127,.25)) }
+.email-preview .em-row { display: flex; gap: 8px; font-size: 14px }
+.email-preview .em-k { flex: 0 0 56px; opacity: .6; font-weight: 500 }
+.email-preview .em-v { overflow-wrap: anywhere }
+.email-preview .em-subj { font-weight: 650 }
+.email-preview .em-body { padding: 12px; white-space: pre-wrap; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere }
 .card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px }
 .frame { display: none; margin: 0; width: min(520px, 100%); border-radius: 16px; overflow: hidden; border: 1px solid var(--stroke); background: #05061a; position: relative }
 .frame.on { display: block }
@@ -423,7 +430,8 @@ dialog.sheet[open] { animation: slide-in .28s cubic-bezier(.2,.8,.2,1) }
 .btn.apple.link-btn { min-height: 44px }
 
 /* links that look tappable: dashed underline + arrow */
-.md a.lk { color: var(--logo-blue); text-decoration: underline dashed; text-underline-offset: 3px; text-decoration-color: currentColor }
+.md a.lk { color: var(--logo-blue); text-decoration: none }
+.md a.lk:hover { text-decoration: underline }
 .md a.lk .lk-arrow { text-decoration: none; display: inline-block }
 /* markdown tables */
 .mdt-wrap { overflow-x: auto; margin: 2px 0 }
